@@ -1,11 +1,14 @@
-# **Medical Records System**
-
+# **Medical Records's System**
+## **Thành viên nhóm**
+- **Thành viên 1:** Trương Công Đạt - 22685561
+- **Thành viên 2:** Nguyễn Gia Lâm - 22685611
+- **Thành viên 3:** Phan Tấn Tài - 22684181
 ## **1. Tổng Quan**
 
-**Medical Records System** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại các phiếu xét nghiệm máu . Hệ thống cho phép:
+**Medical Records's System** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại các phiếu xét nghiệm máu . Hệ thống cho phép:
 
 * Bệnh nhân **xem và thêm kết quả xét nghiệm máu** trong môi trường an toàn
-* Bác sĩ **truy cập hồ sơ bệnh nhân** và gửi thông báo đến bệnh nhân
+* Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
 * Quản trị viên **quản lý tài khoản người dùng** và quyền hạn hệ thống
 
 Nền tảng có giao diện thích ứng với khả năng trực quan hóa dữ liệu để theo dõi các chỉ số sức khỏe theo thời gian.
@@ -54,11 +57,6 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 * Xem tất cả người dùng hệ thống
 * Cập nhật vai trò người dùng (bệnh nhân, bác sĩ, quản trị viên)
 * Đặt lại mật khẩu người dùng
-
-✅ **Giám sát hệ thống**:
-* Theo dõi việc sử dụng hệ thống
-* Đảm bảo tính toàn vẹn và bảo mật dữ liệu
-
 ---
 
 ## **4. Cấu Trúc Cơ Sở Dữ Liệu**
@@ -113,25 +111,32 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 ### **5.1. Quy Trình Bệnh Nhân**
 
 1️⃣ Đăng ký và tạo tài khoản
+
 2️⃣ Thêm kết quả xét nghiệm máu
+
 3️⃣ Xem dữ liệu lịch sử và biểu đồ trực quan
+
 4️⃣ Nhận thông báo từ bác sĩ
 
 ### **5.2. Quy Trình Bác Sĩ**
 
 1️⃣ Đăng nhập với thông tin bác sĩ
+
 2️⃣ Tìm kiếm bệnh nhân cụ thể
+
 3️⃣ Xem xét các bản ghi của bệnh nhân
+
 4️⃣ Gửi thông báo hoặc khuyến nghị
+
 5️⃣ Tải xuống dữ liệu bệnh nhân để phân tích thêm
 
 ### **5.3. Quy Trình Quản Trị Viên**
 
 1️⃣ Quản lý tài khoản người dùng và quyền hạn
-2️⃣ Cập nhật vai trò người dùng khi cần
-3️⃣ Đặt lại mật khẩu cho người dùng
-4️⃣ Giám sát việc sử dụng hệ thống và bảo mật
 
+2️⃣ Cập nhật vai trò người dùng khi cần
+
+3️⃣ Đặt lại mật khẩu cho người dùng
 ---
 
 ## **6. Cấu Trúc Dự Án**
