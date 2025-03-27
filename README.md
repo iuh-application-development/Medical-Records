@@ -175,9 +175,7 @@ medical-records/
    - Windows: `venv\Scripts\activate`
    - Linux/Mac: `source venv/bin/activate`
 4. Cài đặt các gói phụ thuộc: `pip install -r requirements.txt`
-5. Thiết lập biến môi trường cho cấu hình email
-6. Khởi tạo cơ sở dữ liệu
-7. Chạy ứng dụng: `python app.py`
+5. Chạy ứng dụng: `python app.py`
 
 ---
 
