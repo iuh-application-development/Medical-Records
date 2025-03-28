@@ -1,11 +1,11 @@
-# **Medical Records's System**
+# **Medical Records**
 ## **Thành viên nhóm**
 - **Thành viên 1:** Trương Công Đạt - 22685561
 - **Thành viên 2:** Nguyễn Gia Lâm - 22685611
 - **Thành viên 3:** Phan Tấn Tài - 22684181
 ## **1. Tổng Quan**
 
-**Medical Records's System** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại các phiếu xét nghiệm máu . Hệ thống cho phép:
+**Medical Records** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại các phiếu xét nghiệm máu . Hệ thống cho phép:
 
 * Bệnh nhân **xem và thêm kết quả xét nghiệm máu** trong môi trường an toàn
 * Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
@@ -19,7 +19,6 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 * **Frontend**: Bootstrap, Plotly.js cho trực quan hóa dữ liệu
 * **Cơ sở dữ liệu**: SQLite
 * **Xác thực**: Flask-Login
-* **Dịch vụ Email**: Flask-Mail
 * **Môi trường ảo**: Python venv
 
 ---
@@ -30,22 +29,21 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 ✅ **Quản lý tài khoản**:
 * Đăng ký, đăng nhập và cập nhật thông tin cá nhân
-* Đặt lại mật khẩu thông qua xác minh email
 
-✅ **Hồ sơ y tế**:
-* Thêm kết quả xét nghiệm y tế mới
-* Xem dữ liệu y tế lịch sử
-* Trực quan hóa các chỉ số sức khỏe thông qua biểu đồ tương tác
+✅ **Danh sách bản ghi**:
+* Thêm các bản ghi mới
+* Xem lại dữ liệu đã ghi trước đó
+* Trực quan hóa sự biến động của từng chỉ số bằng biểu đồ đường
 
 ✅ **Thông báo**:
 * Nhận và quản lý thông báo từ bác sĩ
-* Đánh dấu thông báo đã đọc
+* Có đánh dấu thông báo đã đọc hay thông báo số lượng thông báo chưa đọc
 
 ### **3.2. Tính Năng Cho Bác Sĩ**
 
 ✅ **Quản lý bệnh nhân**:
 * Tìm kiếm bệnh nhân trong hệ thống
-* Xem hồ sơ y tế của bệnh nhân
+* Xem các bản ghi của bệnh nhân
 * Tải xuống dữ liệu bệnh nhân dưới dạng CSV
 
 ✅ **Giao tiếp**:
@@ -54,7 +52,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 ### **3.3. Tính Năng Cho Quản Trị Viên**
 
 ✅ **Quản lý người dùng**:
-* Xem tất cả người dùng hệ thống
+* Xem danh sách các tài khoản người dùng tham gia sử dụng trang web
 * Cập nhật vai trò người dùng (bệnh nhân, bác sĩ, quản trị viên)
 * Đặt lại mật khẩu người dùng
 ---
@@ -108,7 +106,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 ## **5. Quy Trình Hệ Thống**
 
-### **5.1. Quy Trình Bệnh Nhân**
+### **5.1. Quy trình đối với người dùng có vai trò bệnh nhân**
 
 1️⃣ Đăng ký và tạo tài khoản
 
@@ -118,7 +116,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 4️⃣ Nhận thông báo từ bác sĩ
 
-### **5.2. Quy Trình Bác Sĩ**
+### **5.2. Quy trình đối với người dùng có vai trò bác sĩ**
 
 1️⃣ Đăng nhập với thông tin bác sĩ
 
@@ -130,7 +128,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 5️⃣ Tải xuống dữ liệu bệnh nhân để phân tích thêm
 
-### **5.3. Quy Trình Quản Trị Viên**
+### **5.3. Quy trình đối với người dùng có vai trò quản trị viên**
 
 1️⃣ Quản lý tài khoản người dùng và quyền hạn
 
@@ -168,14 +166,34 @@ medical-records/
 
 ## **7. Cài Đặt và Thiết Lập**
 
-1. Clone repo:  `git clone https://github.com/iuh-application-development/Medical-Records.git`
-                `cd .\Medical-Records\`
-2. Tạo môi trường ảo: `python -m venv venv`
+1. Clone repo:
+```
+git clone https://github.com/iuh-application-development/Medical-Records.git
+```
+```
+cd .\Medical-Records\
+```
+2. Tạo môi trường ảo:
+```
+python -m venv venv
+```
 3. Kích hoạt môi trường ảo:
-   - Windows: `venv\Scripts\activate`
-   - Linux/Mac: `source venv/bin/activate`
-4. Cài đặt các gói phụ thuộc: `pip install -r requirements.txt`
-5. Chạy ứng dụng: `python app.py`
+- Đối với Windows:
+```
+venv\Scripts\activate
+```
+- Đối với Linux/Mac:
+```
+source venv/bin/activate
+```
+4. Cài đặt các gói phụ thuộc:
+```
+pip install -r requirements.txt
+```
+5. Chạy ứng dụng:
+```
+python app.py
+```
 
 ---
 
