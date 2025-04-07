@@ -1,16 +1,38 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_mail import Mail, Message
+from forms import RegistrationForm, LoginForm, UpdateProfileForm, MedicalRecordForm, NotificationForm, ResetPasswordRequestForm, ResetPasswordForm, AdminUserManagementForm, AdminPasswordResetForm
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import RegistrationForm, LoginForm
+from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
+import os
+import pandas as pd
+import plotly.express as px
+import json
+from itsdangerous import URLSafeTimedSerializer
+from flask_wtf.csrf import CSRFProtect
+import uuid
+import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///medical_records.db'
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your-email-password'
+
+csrf = CSRFProtect()
+csrf.init_app(app)
 
 db = SQLAlchemy(app)
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+mail = Mail(app)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,6 +40,35 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
     phone = db.Column(db.String(20))
+    full_name = db.Column(db.String(100))
+    avatar = db.Column(db.String(200))
+    role = db.Column(db.String(20))  # 'patient' or 'doctor'
+    records = db.relationship('MedicalRecord', backref='patient', lazy=True)
+    notifications = db.relationship('Notification', backref='patient', lazy=True)
+    reset_code = db.Column(db.String(6))
+    reset_code_expiry = db.Column(db.DateTime)
+
+class MedicalRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    hgb = db.Column(db.Float)
+    rbc = db.Column(db.Float)
+    wbc = db.Column(db.Float)
+    plt = db.Column(db.Float)
+    hct = db.Column(db.Float)
+    glucose = db.Column(db.Float)
+    creatinine = db.Column(db.Float)
+    alt = db.Column(db.Float)
+    cholesterol = db.Column(db.Float)
+    crp = db.Column(db.Float)
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    read = db.Column(db.Boolean, default=False)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -41,7 +92,8 @@ def register():
             return render_template('register.html', form=form)
         hashed_password = generate_password_hash(form.password.data)
         user = User(username=form.username.data, email=form.email.data,
-                   password_hash=hashed_password, phone=form.phone.data)
+                   password_hash=hashed_password, phone=form.phone.data,
+                   role='patient')
         db.session.add(user)
         db.session.commit()
         flash('Registration successful! Please login.', 'success')
@@ -68,7 +120,21 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+
+if not os.path.exists('static/uploads'):
+    os.makedirs('static/uploads')
+
+with app.app_context():
+    db.create_all()
+    # Create admin user if not exists
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
+        admin = User(username='admin',
+                     email='admin@example.com',
+                     password_hash=generate_password_hash('admin'),
+                     role='admin')
+        db.session.add(admin)
+        db.session.commit()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
