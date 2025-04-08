@@ -180,5 +180,39 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+@app.route('/notifications')
+@login_required
+def notifications():
+    if current_user.role == 'patient':
+        # Patients can only see notifications sent to them
+        notifications = Notification.query.filter_by(patient_id=current_user.id).order_by(Notification.date.desc()).all()
+    elif current_user.role == 'doctor':
+        # Doctors can only see notifications they sent
+        patient_ids = [n.patient_id for n in Notification.query.all()]
+        patients = User.query.filter(User.id.in_(patient_ids)).all()
+        notifications = []
+        for patient in patients:
+            patient_notifications = Notification.query.filter_by(patient_id=patient.id).order_by(Notification.date.desc()).all()
+            notifications.extend(patient_notifications)
+    else:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Mark notifications as read
+    if current_user.role == 'patient':
+        for notification in notifications:
+            if not notification.read:
+                notification.read = True
+        db.session.commit()
+    
+    return render_template('notifications.html', notifications=notifications)
+
+@app.context_processor
+def inject_unread_notifications():
+    if current_user.is_authenticated and current_user.role == 'patient':
+        unread_count = Notification.query.filter_by(patient_id=current_user.id, read=False).count()
+        return {'unread_notifications': unread_count}
+    return {'unread_notifications': 0}
+
 if __name__ == '__main__':
     app.run(debug=True)
