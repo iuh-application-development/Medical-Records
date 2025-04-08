@@ -24,4 +24,7 @@ class UpdateProfileForm(FlaskForm):
     avatar = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
     submit = SubmitField('Update')
 
+class NotificationForm(FlaskForm):
+    message = StringField('Message', validators=[DataRequired(), Length(max=500)])
+    submit = SubmitField('Send Notification')
 
