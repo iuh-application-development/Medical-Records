@@ -120,6 +120,50 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = s.dumps(user.email, salt='reset-password-salt')
+            reset_url = url_for('reset_password', token=token, _external=True)
+            msg = Message('Password Reset Request',
+                        sender=app.config['MAIL_USERNAME'],
+                        recipients=[user.email])
+            msg.body = f'''To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request, simply ignore this email.
+'''
+            mail.send(msg)
+            flash('Check your email for instructions to reset your password.', 'info')
+            return redirect(url_for('login'))
+        flash('Email address not found.', 'error')
+    return render_template('reset_password_request.html', form=form)
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    try:
+        email = s.loads(token, salt='reset-password-salt', max_age=3600)  # Token expires in 1 hour
+    except:
+        flash('The password reset link is invalid or has expired.', 'error')
+        return redirect(url_for('reset_password_request'))
+    
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.password_hash = generate_password_hash(form.password.data)
+            db.session.commit()
+            flash('Your password has been reset.', 'success')
+            return redirect(url_for('login'))
+    return render_template('reset_password.html', form=form)
+
 
 if not os.path.exists('static/uploads'):
     os.makedirs('static/uploads')
