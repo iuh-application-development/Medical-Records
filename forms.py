@@ -16,3 +16,15 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
+    
+class UpdateProfileForm(FlaskForm):
+    full_name = StringField('Full Name', validators=[DataRequired(), Length(max=100)])
+    phone = StringField('Phone', validators=[DataRequired(), Length(min=10, max=15)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    avatar = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
+    submit = SubmitField('Update')
+
+class NotificationForm(FlaskForm):
+    message = StringField('Message', validators=[DataRequired(), Length(max=500)])
+    submit = SubmitField('Send Notification')
+
