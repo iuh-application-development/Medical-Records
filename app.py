@@ -164,22 +164,6 @@ def reset_password(token):
             return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
-
-if not os.path.exists('static/uploads'):
-    os.makedirs('static/uploads')
-
-with app.app_context():
-    db.create_all()
-    # Create admin user if not exists
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin',
-                     email='admin@example.com',
-                     password_hash=generate_password_hash('admin'),
-                     role='admin')
-        db.session.add(admin)
-        db.session.commit()
-
 @app.route('/notifications')
 @login_required
 def notifications():
@@ -213,6 +197,38 @@ def inject_unread_notifications():
         unread_count = Notification.query.filter_by(patient_id=current_user.id, read=False).count()
         return {'unread_notifications': unread_count}
     return {'unread_notifications': 0}
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = UpdateProfileForm()
+    if form.validate_on_submit():
+        try:
+            if form.avatar.data:
+                file = form.avatar.data
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                file.save(file_path)
+                current_user.avatar = filename
+            
+            current_user.full_name = form.full_name.data
+            current_user.phone = form.phone.data
+            current_user.email = form.email.data
+            db.session.commit()
+            flash('Your profile has been updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating your profile. Please try again.', 'danger') 
+    
+    elif request.method == 'GET':
+        form.full_name.data = current_user.full_name
+        form.phone.data = current_user.phone
+        form.email.data = current_user.email
+    
+    return render_template('profile.html', form=form)
 
 
 
