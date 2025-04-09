@@ -164,22 +164,6 @@ def reset_password(token):
             return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
 
-
-if not os.path.exists('static/uploads'):
-    os.makedirs('static/uploads')
-
-with app.app_context():
-    db.create_all()
-    # Create admin user if not exists
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin',
-                     email='admin@example.com',
-                     password_hash=generate_password_hash('admin'),
-                     role='admin')
-        db.session.add(admin)
-        db.session.commit()
-
 @app.route('/notifications')
 @login_required
 def notifications():
@@ -213,6 +197,143 @@ def inject_unread_notifications():
         unread_count = Notification.query.filter_by(patient_id=current_user.id, read=False).count()
         return {'unread_notifications': unread_count}
     return {'unread_notifications': 0}
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    form = UpdateProfileForm()
+    if form.validate_on_submit():
+        try:
+            if form.avatar.data:
+                file = form.avatar.data
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                file.save(file_path)
+                current_user.avatar = filename
+            
+            current_user.full_name = form.full_name.data
+            current_user.phone = form.phone.data
+            current_user.email = form.email.data
+            db.session.commit()
+            flash('Your profile has been updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating your profile. Please try again.', 'danger') 
+    
+    elif request.method == 'GET':
+        form.full_name.data = current_user.full_name
+        form.phone.data = current_user.phone
+        form.email.data = current_user.email
+    
+    return render_template('profile.html', form=form)
+
+@app.route('/search_patient')
+@login_required
+def search_patient():
+    if current_user.role != 'doctor':
+        flash('Access denied. Doctors only.', 'danger')
+        return redirect(url_for('index'))
+    
+    patients = User.query.filter_by(role='patient').all()
+    return render_template('search_patient.html', patients=patients)
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    users = User.query.all()
+    role_form = AdminUserManagementForm()
+    password_form = AdminPasswordResetForm()
+    return render_template('admin_users.html', users=users, role_form=role_form, password_form=password_form)
+
+@app.route('/admin/update_role/<int:user_id>', methods=['POST'])
+@login_required
+def admin_update_role(user_id):
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    form = AdminUserManagementForm()
+    user = User.query.get_or_404(user_id)
+    
+    # Set the current role in the form
+    form.current_role.data = user.role
+    
+    if form.validate_on_submit():
+        new_role = form.role.data
+        
+        # Check if the user is trying to change their own role
+        if user.id == current_user.id:
+            flash('Cannot change your own role.', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        if user.role != new_role:
+            user.role = new_role
+            db.session.commit()
+            flash(f'Successfully updated {user.username}\'s role to {new_role}', 'success')
+        else:
+            flash(f'No role change needed - {user.username} is already a {new_role}', 'info')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{field}: {error}', 'danger')
+    
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
+@login_required
+def admin_reset_password(user_id):
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    if not request.form.get('csrf_token'):
+        flash('Invalid CSRF token. Please try again.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    user = User.query.get_or_404(user_id)
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not new_password or not confirm_password:
+        flash('Both password fields are required.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    if new_password != confirm_password:
+        flash('Passwords do not match.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    try:
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash(f'Password for user {user.username} has been reset successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while resetting the password. Please try again.', 'danger')
+        print(str(e))  # For debugging
+
+    return redirect(url_for('admin_users'))
+
+if not os.path.exists('static/uploads'):
+    os.makedirs('static/uploads')
+
+with app.app_context():
+    db.create_all()
+    # Create admin user if not exists
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
+        admin = User(username='admin',
+                     email='admin@example.com',
+                     password_hash=generate_password_hash('admin'),
+                     role='admin')
+        db.session.add(admin)
+        db.session.commit()
 
 if __name__ == '__main__':
     app.run(debug=True)

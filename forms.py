@@ -41,3 +41,13 @@ class MedicalRecordForm(FlaskForm):
     cholesterol = StringField('Cholesterol', validators=[DataRequired()])
     crp = StringField('CRP', validators=[DataRequired()])
     submit = SubmitField('Save Record')
+    
+class AdminUserManagementForm(FlaskForm):
+    role = SelectField('Role', choices=[('patient', 'Patient'), ('doctor', 'Doctor'), ('admin', 'Admin')])
+    current_role = StringField('Current Role')
+    submit = SubmitField('Update Role')
+
+class AdminPasswordResetForm(FlaskForm):
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('new_password')])
+    submit = SubmitField('Reset Password')
