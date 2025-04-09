@@ -240,6 +240,85 @@ def search_patient():
     patients = User.query.filter_by(role='patient').all()
     return render_template('search_patient.html', patients=patients)
 
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    users = User.query.all()
+    role_form = AdminUserManagementForm()
+    password_form = AdminPasswordResetForm()
+    return render_template('admin_users.html', users=users, role_form=role_form, password_form=password_form)
+
+@app.route('/admin/update_role/<int:user_id>', methods=['POST'])
+@login_required
+def admin_update_role(user_id):
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    form = AdminUserManagementForm()
+    user = User.query.get_or_404(user_id)
+    
+    # Set the current role in the form
+    form.current_role.data = user.role
+    
+    if form.validate_on_submit():
+        new_role = form.role.data
+        
+        # Check if the user is trying to change their own role
+        if user.id == current_user.id:
+            flash('Cannot change your own role.', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        if user.role != new_role:
+            user.role = new_role
+            db.session.commit()
+            flash(f'Successfully updated {user.username}\'s role to {new_role}', 'success')
+        else:
+            flash(f'No role change needed - {user.username} is already a {new_role}', 'info')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{field}: {error}', 'danger')
+    
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
+@login_required
+def admin_reset_password(user_id):
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    if not request.form.get('csrf_token'):
+        flash('Invalid CSRF token. Please try again.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    user = User.query.get_or_404(user_id)
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not new_password or not confirm_password:
+        flash('Both password fields are required.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    if new_password != confirm_password:
+        flash('Passwords do not match.', 'danger')
+        return redirect(url_for('admin_users'))
+
+    try:
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        flash(f'Password for user {user.username} has been reset successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while resetting the password. Please try again.', 'danger')
+        print(str(e))  # For debugging
+
+    return redirect(url_for('admin_users'))
 
 if not os.path.exists('static/uploads'):
     os.makedirs('static/uploads')
