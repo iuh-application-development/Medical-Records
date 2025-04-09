@@ -230,6 +230,15 @@ def profile():
     
     return render_template('profile.html', form=form)
 
+@app.route('/search_patient')
+@login_required
+def search_patient():
+    if current_user.role != 'doctor':
+        flash('Access denied. Doctors only.', 'danger')
+        return redirect(url_for('index'))
+    
+    patients = User.query.filter_by(role='patient').all()
+    return render_template('search_patient.html', patients=patients)
 
 
 if not os.path.exists('static/uploads'):
