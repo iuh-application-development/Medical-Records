@@ -320,6 +320,23 @@ def admin_reset_password(user_id):
 
     return redirect(url_for('admin_users'))
 
+@app.route('/view_patient_records/<int:patient_id>')
+@login_required
+def view_patient_records(patient_id):
+    if current_user.role not in ['doctor']:
+        flash('Access denied. Doctors and admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    patient = User.query.get_or_404(patient_id)
+    if patient.role != 'patient':
+        flash('Invalid patient ID.', 'danger')
+        return redirect(url_for('search_patient'))
+    
+    records = MedicalRecord.query.filter_by(patient_id=patient_id).order_by(MedicalRecord.date.desc()).all()
+    notification_form = NotificationForm()
+    return render_template('view_records.html', records=records, patient=patient, patient_id=patient_id, notification_form=notification_form)
+
+
 if not os.path.exists('static/uploads'):
     os.makedirs('static/uploads')
 
