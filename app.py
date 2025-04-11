@@ -11,7 +11,7 @@ import os
 import pandas as pd
 import plotly.express as px
 import json
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_wtf.csrf import CSRFProtect
 import uuid
 import random
@@ -157,8 +157,14 @@ def reset_password(token):
         return redirect(url_for('index'))
     try:
         email = s.loads(token, salt='reset-password-salt', max_age=3600)  # Token expires in 1 hour
-    except:
-        flash('The password reset link is invalid or has expired.', 'error')
+    except SignatureExpired:
+        flash('Đường dẫn đặt lại mật khẩu đã hết hạn.', 'error')
+        return redirect(url_for('reset_password_request'))
+    except BadSignature:
+        flash('Đường dẫn đặt lại mật khẩu không hợp lệ.', 'error')
+        return redirect(url_for('reset_password_request'))
+    except Exception as e:
+        flash('Đã xảy ra lỗi. Vui lòng thử lại.', 'error')
         return redirect(url_for('reset_password_request'))
     
     form = ResetPasswordForm()
