@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-primary mb-4">
+                {% if current_user.role == 'patient' %}
+                    My Notifications
+                {% else %}
+                    Sent Notifications
+                {% endif %}
+            </h1>
+            
+            {% if notifications %}
+                <div class="list-group">
+                    {% for notification in notifications %}
+                        <div class="list-group-item notification-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="notification-content">
+                                    {% if current_user.role == 'doctor' %}
+                                        <h5 class="mb-1">To: {{ notification.patient.username }}</h5>
+                                    {% endif %}
+                                    <p class="mb-1">{{ notification.message }}</p>
+                                    <div class="notification-meta">
+                                        <small class="text-muted">{{ notification.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% if not notification.read and current_user.role == 'patient' %}
+                                            <span class="badge bg-primary ms-2">New</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if current_user.role == 'patient' %}
+                                <form action="{{ url_for('delete_notification', notification_id=notification.id) }}" method="post" class="delete-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-link text-danger delete-btn" onclick="return confirm('Are you sure you want to delete this notification?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    {% if current_user.role == 'patient' %}
+                        No notifications received yet.
+                    {% else %}
+                        No notifications sent yet.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.notification-item {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: white;
+}
+
+.notification-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.notification-content {
+    flex: 1;
+    padding-right: 1rem;
+}
+
+.notification-meta {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.35em 0.65em;
+}
+
+.delete-btn {
+    padding: 0.25rem;
+    font-size: 1.1rem;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.notification-item:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    transform: scale(1.1);
+    color: #dc3545 !important;
+}
+
+.delete-form {
+    margin-left: 1rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.list-group-item {
+    animation: fadeIn 0.3s ease-out;
+}
+</style>
+{% endblock %}
