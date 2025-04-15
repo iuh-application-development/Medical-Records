@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+from app import create_app, db
+from werkzeug.security import generate_password_hash
+
+# Create the application instance
+app = create_app()
+=======
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -6,24 +13,31 @@ from forms import RegistrationForm, LoginForm, UpdateProfileForm, MedicalRecordF
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import os
 import pandas as pd
 import plotly.express as px
 import json
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_wtf.csrf import CSRFProtect
 import uuid
 import random
 
+
+
+# Tải biến môi trường từ file .env
+load_dotenv()
+
+# Khởi tạo ứng dụng Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///medical_records.db'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER')
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True') == 'True'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 
 csrf = CSRFProtect()
 csrf.init_app(app)
@@ -92,8 +106,8 @@ def register():
             return render_template('register.html', form=form)
         hashed_password = generate_password_hash(form.password.data)
         user = User(username=form.username.data, email=form.email.data,
-                   password_hash=hashed_password, phone=form.phone.data,
-                   role='patient')
+                password_hash=hashed_password, phone=form.phone.data,
+                role='patient')
         db.session.add(user)
         db.session.commit()
         flash('Registration successful! Please login.', 'success')
@@ -150,8 +164,14 @@ def reset_password(token):
         return redirect(url_for('index'))
     try:
         email = s.loads(token, salt='reset-password-salt', max_age=3600)  # Token expires in 1 hour
-    except:
-        flash('The password reset link is invalid or has expired.', 'error')
+    except SignatureExpired:
+        flash('Đường dẫn đặt lại mật khẩu đã hết hạn.', 'error')
+        return redirect(url_for('reset_password_request'))
+    except BadSignature:
+        flash('Đường dẫn đặt lại mật khẩu không hợp lệ.', 'error')
+        return redirect(url_for('reset_password_request'))
+    except Exception as e:
+        flash('Đã xảy ra lỗi. Vui lòng thử lại.', 'error')
         return redirect(url_for('reset_password_request'))
     
     form = ResetPasswordForm()
@@ -322,16 +342,23 @@ def admin_reset_password(user_id):
 
 if not os.path.exists('static/uploads'):
     os.makedirs('static/uploads')
+>>>>>>> 6fa439141c6cda01937912bad462aabce1a5b4ad
 
+# Create database tables and admin user
 with app.app_context():
+    from app.models.user import User
+    
     db.create_all()
+    
     # Create admin user if not exists
     admin = User.query.filter_by(username='admin').first()
     if not admin:
-        admin = User(username='admin',
-                     email='admin@example.com',
-                     password_hash=generate_password_hash('admin'),
-                     role='admin')
+        admin = User(
+            username='admin',
+            email='admin@example.com',
+            password_hash=generate_password_hash('admin'),
+            role='admin'
+        )
         db.session.add(admin)
         db.session.commit()
 
