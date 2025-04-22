@@ -412,3 +412,205 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 {% endblock %}
 
+{% block scripts %}
+<!-- Add Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Forgot Password Functionality
+let resetEmail = '';
+
+async function sendVerificationCode() {
+    const email = document.getElementById('resetEmail').value;
+    if (!email) {
+        alert('Please enter your email address');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/send_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            resetEmail = email;
+            document.getElementById('step1').classList.add('d-none');
+            document.getElementById('step2').classList.remove('d-none');
+            
+            // Update character expression
+            const character = document.querySelector('.character');
+            character.className = 'character happy';
+        } else {
+            alert(data.error || 'Failed to send verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+async function verifyCode() {
+    const inputs = document.querySelectorAll('.code-input');
+    let code = '';
+    inputs.forEach(input => {
+        code += input.value;
+    });
+    
+    if (code.length !== 6) {
+        alert('Please enter the complete verification code');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/verify_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ 
+                email: resetEmail,
+                code: code
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('step2').classList.add('d-none');
+            document.getElementById('step3').classList.remove('d-none');
+        } else {
+            alert(data.error || 'Invalid verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+async function resetPassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    if (!newPassword || !confirmPassword) {
+        alert('Please fill in all password fields');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+    }
+    
+    try {
+        const inputs = document.querySelectorAll('.code-input');
+        let code = '';
+        inputs.forEach(input => {
+            code += input.value;
+        });
+        
+        const response = await fetch('/reset_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({
+                email: resetEmail,
+                code: code,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Password reset successful! Please login with your new password.');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+            modal.hide();
+        } else {
+            alert(data.error || 'Failed to reset password');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+async function resendCode() {
+    try {
+        const response = await fetch('/send_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ email: resetEmail })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('A new verification code has been sent to your email');
+        } else {
+            alert(data.error || 'Failed to send verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+// Verification code input handling
+document.querySelectorAll('.code-input').forEach((input, index) => {
+    input.addEventListener('keyup', (e) => {
+        if (e.key >= 0 && e.key <= 9) {
+            if (index < 5) {
+                document.querySelectorAll('.code-input')[index + 1].focus();
+            }
+        } else if (e.key === 'Backspace') {
+            if (index > 0) {
+                document.querySelectorAll('.code-input')[index - 1].focus();
+            }
+        }
+    });
+    
+    input.addEventListener('keypress', (e) => {
+        if (e.key < '0' || e.key > '9') {
+            e.preventDefault();
+        }
+    });
+});
+
+// Password visibility toggles for reset password form
+document.querySelector('.new-password-toggle').addEventListener('click', function() {
+    const input = document.getElementById('newPassword');
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+});
+
+document.querySelector('.confirm-new-password-toggle').addEventListener('click', function() {
+    const input = document.getElementById('confirmNewPassword');
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+});
+
+// Reset modal state when closed
+document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('step1').classList.remove('d-none');
+    document.getElementById('step2').classList.add('d-none');
+    document.getElementById('step3').classList.add('d-none');
+    document.getElementById('resetEmail').value = '';
+    document.querySelectorAll('.code-input').forEach(input => input.value = '');
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+});
+</script>
+{% endblock %}
