@@ -455,5 +455,45 @@ async function sendVerificationCode() {
     }
 }
 
+async function verifyCode() {
+    const inputs = document.querySelectorAll('.code-input');
+    let code = '';
+    inputs.forEach(input => {
+        code += input.value;
+    });
+    
+    if (code.length !== 6) {
+        alert('Please enter the complete verification code');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/verify_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ 
+                email: resetEmail,
+                code: code
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('step2').classList.add('d-none');
+            document.getElementById('step3').classList.remove('d-none');
+        } else {
+            alert(data.error || 'Invalid verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+
+
 </script>
 {% endblock %}
