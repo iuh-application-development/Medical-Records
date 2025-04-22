@@ -412,3 +412,48 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 {% endblock %}
 
+{% block scripts %}
+<!-- Add Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Forgot Password Functionality
+let resetEmail = '';
+
+async function sendVerificationCode() {
+    const email = document.getElementById('resetEmail').value;
+    if (!email) {
+        alert('Please enter your email address');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/send_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            resetEmail = email;
+            document.getElementById('step1').classList.add('d-none');
+            document.getElementById('step2').classList.remove('d-none');
+            
+            // Update character expression
+            const character = document.querySelector('.character');
+            character.className = 'character happy';
+        } else {
+            alert(data.error || 'Failed to send verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+
+</script>
+{% endblock %}
