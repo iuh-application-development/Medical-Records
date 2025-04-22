@@ -101,3 +101,41 @@ def view_charts():
     
     return render_template('view_charts.html', charts=charts, parameters=selected_parameters)
 
+@bp.route('/send_notification/<int:patient_id>', methods=['POST'])  # Changed from @app.route
+@login_required
+def send_notification(patient_id):
+    if current_user.role not in ['doctor', 'admin']:
+        return jsonify({
+            'success': False,
+            'message': 'Access denied. Doctors and admin only.'
+        }), 403
+    
+    patient = User.query.get_or_404(patient_id)
+    message = request.form.get('message')
+    
+    if not message:
+        return jsonify({
+            'success': False,
+            'message': 'Message cannot be empty.'
+        }), 400
+        
+    try:
+        notification = Notification(
+            patient_id=patient_id,
+            message=message,
+            date=datetime.utcnow(),
+            read=False
+        )
+        db.session.add(notification)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Notification sent to {patient.username} successfully!'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Failed to send notification. Please try again.'
+        }), 500
