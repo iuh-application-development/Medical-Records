@@ -139,3 +139,41 @@ def send_notification(patient_id):
             'success': False,
             'message': 'Failed to send notification. Please try again.'
         }), 500
+        
+        
+        @bp.route('/download_records/<int:patient_id>')  # Changed from @app.route
+@login_required
+def download_records(patient_id):
+    if current_user.role != 'doctor':
+        flash('Access denied. Doctors only.', 'danger')
+        return redirect(url_for('index'))
+    
+    patient = User.query.get_or_404(patient_id)
+    records = MedicalRecord.query.filter_by(patient_id=patient_id).order_by(MedicalRecord.date.desc()).all()
+    
+    # Create CSV data
+    data = []
+    for record in records:
+        data.append({
+            'Date': record.date.strftime('%Y-%m-%d'),
+            'HGB': record.hgb,
+            'RBC': record.rbc,
+            'WBC': record.wbc,
+            'PLT': record.plt,
+            'HCT': record.hct,
+            'Glucose': record.glucose,
+            'Creatinine': record.creatinine,
+            'ALT': record.alt,
+            'Cholesterol': record.cholesterol,
+            'CRP': record.crp
+        })
+    
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+    
+    # Create response with CSV file
+    response = make_response(csv_data)
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename={patient.username}_medical_records.csv'
+    
+    return response
