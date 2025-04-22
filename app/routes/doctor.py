@@ -101,3 +101,79 @@ def view_charts():
     
     return render_template('view_charts.html', charts=charts, parameters=selected_parameters)
 
+@bp.route('/send_notification/<int:patient_id>', methods=['POST'])  # Changed from @app.route
+@login_required
+def send_notification(patient_id):
+    if current_user.role not in ['doctor', 'admin']:
+        return jsonify({
+            'success': False,
+            'message': 'Access denied. Doctors and admin only.'
+        }), 403
+    
+    patient = User.query.get_or_404(patient_id)
+    message = request.form.get('message')
+    
+    if not message:
+        return jsonify({
+            'success': False,
+            'message': 'Message cannot be empty.'
+        }), 400
+        
+    try:
+        notification = Notification(
+            patient_id=patient_id,
+            message=message,
+            date=datetime.utcnow(),
+            read=False
+        )
+        db.session.add(notification)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Notification sent to {patient.username} successfully!'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Failed to send notification. Please try again.'
+        }), 500
+        
+        
+        @bp.route('/download_records/<int:patient_id>')  # Changed from @app.route
+@login_required
+def download_records(patient_id):
+    if current_user.role != 'doctor':
+        flash('Access denied. Doctors only.', 'danger')
+        return redirect(url_for('index'))
+    
+    patient = User.query.get_or_404(patient_id)
+    records = MedicalRecord.query.filter_by(patient_id=patient_id).order_by(MedicalRecord.date.desc()).all()
+    
+    # Create CSV data
+    data = []
+    for record in records:
+        data.append({
+            'Date': record.date.strftime('%Y-%m-%d'),
+            'HGB': record.hgb,
+            'RBC': record.rbc,
+            'WBC': record.wbc,
+            'PLT': record.plt,
+            'HCT': record.hct,
+            'Glucose': record.glucose,
+            'Creatinine': record.creatinine,
+            'ALT': record.alt,
+            'Cholesterol': record.cholesterol,
+            'CRP': record.crp
+        })
+    
+    df = pd.DataFrame(data)
+    csv_data = df.to_csv(index=False)
+    
+    # Create response with CSV file
+    response = make_response(csv_data)
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename={patient.username}_medical_records.csv'
+    
+    return response
