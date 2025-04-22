@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}Search Patient{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-lg border-0 rounded-4 search-card">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary mb-0">Patient List</h2>
+                <div class="search-box">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="patientSearch" placeholder="Search patients...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Contact Info</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {% if patient.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/' + patient.avatar) }}" alt="Avatar">
+                                        {% else %}
+                                        <span class="avatar-initial">{{ patient.username[0].upper() }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{ patient.username }}</h6>
+                                        <small class="text-muted">{{ patient.full_name or 'Not provided' }}</small>
+                                        <div class="mt-1">
+                                            <span class="badge bg-primary">ID: {{ patient.id }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <span>{{ patient.email }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-phone text-muted me-2"></i>
+                                        <span>{{ patient.phone or 'Not provided' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('view_patient_records', patient_id=patient.id) }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-file-medical me-1"></i> View Records
+                                    </a>
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#notificationModal{{ patient.id }}">
+                                        <i class="fas fa-bell me-1"></i> Send Notification
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Notification Modal -->
+                        <div class="modal" id="notificationModal{{ patient.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Send Notification to {{ patient.username }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="notificationForm{{ patient.id }}" action="{{ url_for('send_notification', patient_id=patient.id) }}" method="post">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="message{{ patient.id }}" class="form-label">Message</label>
+                                                <textarea class="form-control" id="message{{ patient.id }}" name="message" rows="4" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Send</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+}
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-box .input-group {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.search-box .input-group-text {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initial {
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.table {
+    position: relative;
+    z-index: 1;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    position: relative;
+    z-index: 2;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Remove all custom modal styles */
+.modal-backdrop {
+    display: none !important;
+}
+
+.modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 500px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+.modal textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.modal textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+
+@media (min-width: 576px) {
+    .modal-dialog {
+        margin: 1.75rem auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .search-box {
+        margin-top: 1rem;
+    }
+    
+    .table-responsive {
+        margin: 0 -1.5rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+// Search functionality
+document.getElementById('patientSearch').addEventListener('input', function(e) {
+    const searchText = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const username = row.querySelector('h6').textContent.toLowerCase();
+        const name = row.querySelector('small').textContent.toLowerCase();
+        const email = row.querySelector('.fa-envelope').nextElementSibling.textContent.toLowerCase();
+        const id = row.querySelector('.badge').textContent.toLowerCase();
+        
+        if (username.includes(searchText) || name.includes(searchText) || 
+            email.includes(searchText) || id.includes(searchText)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle notification form submissions
+    var notificationForms = document.querySelectorAll('form[id^="notificationForm"]');
+    notificationForms.forEach(function(form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal using Bootstrap's hide method
+                    const modalElement = form.closest('.modal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        // Fallback if Bootstrap modal instance not found
+                        modalElement.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                    }
+                    
+                    // Clear form
+                    form.reset();
+                    
+                    // Show success message
+                    alert(data.message);
+                } else {
+                    alert(data.message || 'Failed to send notification. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    });
+
+    // Initialize Bootstrap modals
+    var modals = document.querySelectorAll('.modal');
+    modals.forEach(function(modal) {
+        new bootstrap.Modal(modal, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+    });
+});
+</script>
+{% endblock %}
