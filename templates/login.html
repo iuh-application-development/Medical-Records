@@ -564,5 +564,53 @@ async function resendCode() {
     }
 }
 
+// Verification code input handling
+document.querySelectorAll('.code-input').forEach((input, index) => {
+    input.addEventListener('keyup', (e) => {
+        if (e.key >= 0 && e.key <= 9) {
+            if (index < 5) {
+                document.querySelectorAll('.code-input')[index + 1].focus();
+            }
+        } else if (e.key === 'Backspace') {
+            if (index > 0) {
+                document.querySelectorAll('.code-input')[index - 1].focus();
+            }
+        }
+    });
+    
+    input.addEventListener('keypress', (e) => {
+        if (e.key < '0' || e.key > '9') {
+            e.preventDefault();
+        }
+    });
+});
+
+// Password visibility toggles for reset password form
+document.querySelector('.new-password-toggle').addEventListener('click', function() {
+    const input = document.getElementById('newPassword');
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+});
+
+document.querySelector('.confirm-new-password-toggle').addEventListener('click', function() {
+    const input = document.getElementById('confirmNewPassword');
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    this.querySelector('i').classList.toggle('fa-eye');
+    this.querySelector('i').classList.toggle('fa-eye-slash');
+});
+
+// Reset modal state when closed
+document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('step1').classList.remove('d-none');
+    document.getElementById('step2').classList.add('d-none');
+    document.getElementById('step3').classList.add('d-none');
+    document.getElementById('resetEmail').value = '';
+    document.querySelectorAll('.code-input').forEach(input => input.value = '');
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+});
 </script>
 {% endblock %}
