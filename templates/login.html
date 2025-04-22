@@ -493,7 +493,76 @@ async function verifyCode() {
     }
 }
 
+async function resetPassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    if (!newPassword || !confirmPassword) {
+        alert('Please fill in all password fields');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+    }
+    
+    try {
+        const inputs = document.querySelectorAll('.code-input');
+        let code = '';
+        inputs.forEach(input => {
+            code += input.value;
+        });
+        
+        const response = await fetch('/reset_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({
+                email: resetEmail,
+                code: code,
+                new_password: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Password reset successful! Please login with your new password.');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+            modal.hide();
+        } else {
+            alert(data.error || 'Failed to reset password');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
 
+async function resendCode() {
+    try {
+        const response = await fetch('/send_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ email: resetEmail })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('A new verification code has been sent to your email');
+        } else {
+            alert(data.error || 'Failed to send verification code');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
 
 </script>
 {% endblock %}
