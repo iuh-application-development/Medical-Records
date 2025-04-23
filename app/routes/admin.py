@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.models.user import User
-from app.forms.admin_forms import AdminUserManagementForm, AdminPasswordResetForm
+from app.forms.admin_forms import AdminUserManagementForm, AdminPasswordResetForm 
 from app import db, s
 
 bp = Blueprint('admin', __name__)
@@ -83,7 +83,6 @@ def reset_password(user_id):
     except Exception as e:
         db.session.rollback()
         flash('An error occurred while resetting the password. Please try again.', 'danger')
-        # print(str(e))  # For debugging
 
     return redirect(url_for('admin.users'))
 

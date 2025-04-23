@@ -15,3 +15,12 @@ class User(UserMixin, db.Model):
     notifications = db.relationship('Notification', backref='patient', lazy=True)
     reset_code = db.Column(db.String(6))
     reset_code_expiry = db.Column(db.DateTime)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+        
+    def get_unread_notifications_count(self):
+        return sum(1 for n in self.notifications if not n.read)
