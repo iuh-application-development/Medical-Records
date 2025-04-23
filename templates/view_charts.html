@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Charts{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% if current_user.role == 'doctor' and patient %}
+            <h2 class="text-center mb-4">Medical Records Charts - Patient: {{ patient.full_name }} ({{ patient.username }})</h2>
+        {% else %}
+            <h2 class="text-center mb-4">Medical Records Charts</h2>
+        {% endif %}
+        <div class="mb-4">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-12">
+                    <label class="form-label">Select Parameters</label>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="hgb" id="hgb" {% if 'hgb' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="hgb">HGB (Hemoglobin)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="rbc" id="rbc" {% if 'rbc' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="rbc">RBC (Red Blood Cell)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="wbc" id="wbc" {% if 'wbc' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="wbc">WBC (White Blood Cell)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="plt" id="plt" {% if 'plt' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="plt">PLT (Platelets)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="hct" id="hct" {% if 'hct' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="hct">HCT (Hematocrit)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="glucose" id="glucose" {% if 'glucose' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="glucose">Glucose</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="creatinine" id="creatinine" {% if 'creatinine' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="creatinine">Creatinine</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="alt" id="alt" {% if 'alt' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="alt">ALT</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="cholesterol" id="cholesterol" {% if 'cholesterol' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="cholesterol">Total Cholesterol</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="parameters" value="crp" id="crp" {% if 'crp' in parameters %}checked{% endif %}>
+                                <label class="form-check-label" for="crp">CRP</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-primary">Update Charts</button>
+                </div>
+            </form>
+        </div>
+        {% for param, chart in charts.items() %}
+            <div id="{{ param }}_chart" class="mb-4"></div>
+            <script>
+                var chartData = {{ chart | safe }};
+                Plotly.newPlot('{{ param }}_chart', chartData.data, chartData.layout);
+            </script>
+        {% else %}
+            <div class="alert alert-info text-center">
+                No data available for the selected parameters.
+                {% if current_user.role == 'patient' %}
+                <br>
+                <a href="{{ url_for('patient.new_record') }}" class="btn btn-primary mt-2">Add New Record</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
