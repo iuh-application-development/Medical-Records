@@ -83,7 +83,6 @@ def reset_password(user_id):
     except Exception as e:
         db.session.rollback()
         flash('An error occurred while resetting the password. Please try again.', 'danger')
-        # print(str(e))  # For debugging
 
     return redirect(url_for('admin.users'))
 
