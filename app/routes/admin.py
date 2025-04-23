@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.models.user import User
-from app.forms.admin_forms import AdminUserManagementForm, AdminPasswordResetForm
+from app.forms.admin_forms import AdminUserManagementForm, AdminPasswordResetForm 
 from app import db, s
 
 bp = Blueprint('admin', __name__)
