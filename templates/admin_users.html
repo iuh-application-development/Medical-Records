@@ -23,7 +23,8 @@
                         <tr>
                             <th>User</th>
                             <th>Contact Info</th>
-                            <th>Role</th>
+                            <th>Current Role</th>
+                            <th>Change Role</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -58,7 +59,10 @@
                                 </div>
                             </td>
                             <td>
-                                <form action="{{ url_for('admin_update_role', user_id=user.id) }}" method="post" class="d-flex align-items-center">
+                                {{ user.role }}
+                            </td>
+                            <td>
+                                <form action="{{ url_for('admin.update_role', user_id=user.id) }}" method="post" class="d-flex align-items-center">
                                     {{ role_form.csrf_token }}
                                     {{ role_form.current_role(value=user.role, class='form-select form-select-sm w-auto me-2') }}
                                     {{ role_form.role(class='form-select form-select-sm w-auto me-2') }}
@@ -90,7 +94,7 @@
                 <h5 class="modal-title">Reset Password for {{ user.username }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('admin_reset_password', user_id=user.id) }}" method="post">
+            <form action="{{ url_for('admin.reset_password', user_id=user.id) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
