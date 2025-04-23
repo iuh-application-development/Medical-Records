@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Medical Records Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Welcome to Medical Records Management</h1>
+        {% if current_user.is_authenticated %}
+            {% if current_user.role == 'patient' %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Your Medical Records</h2>
+                        <p class="card-text">View and manage your medical test results and history.</p>
+                        <a href="{{ url_for('view_records') }}" class="btn btn-primary">View My Records</a>
+                    </div>
+                </div>
+            {% elif current_user.role == 'doctor' %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Patient Management</h2>
+                        <p class="card-text">Access and manage patient records and medical data.</p>
+                        <a href="{{ url_for('manage_patients') }}" class="btn btn-primary">Manage Patients</a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Get Started</h2>
+                    <p class="card-text">Please login or register to access the medical records management system.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">Register</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

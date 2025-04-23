@@ -4,6 +4,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
+from app.config import Config
 import os
 
 # Initialize extensions
@@ -18,18 +19,8 @@ def create_app():
                 template_folder='../templates',  # Chỉ định đường dẫn đến thư mục templates
                 static_folder='../static')       # Chỉ định đường dẫn đến thư mục static
     
-    # Config settings
-    app.config.update(
-        SECRET_KEY='your-secret-key',
-        SQLALCHEMY_DATABASE_URI='sqlite:///medical_records.db',
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        UPLOAD_FOLDER='static/uploads',
-        MAIL_SERVER='smtp.gmail.com',
-        MAIL_PORT=587,
-        MAIL_USE_TLS=True,
-        MAIL_USERNAME='your-email@gmail.com',
-        MAIL_PASSWORD='your-email-password'
-    )
+    # Load configuration from Config class
+    app.config.from_object(Config)
 
     # Initialize extensions with app
     db.init_app(app)
@@ -43,7 +34,7 @@ def create_app():
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     
     # Ensure upload directory exists
-    upload_dir = os.path.join(app.root_path, 'static/uploads')
+    upload_dir = os.path.join(app.root_path, '..', app.config['UPLOAD_FOLDER'])
     if not os.path.exists(upload_dir):
         os.makedirs(upload_dir)
 
@@ -53,10 +44,12 @@ def create_app():
 
     # Import and register blueprints
     from app.routes import admin, patient, doctor, auth
+    from app.routes.chat_ai import bp as chat_ai_bp
     app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(patient.bp, url_prefix='/patient')
     app.register_blueprint(doctor.bp, url_prefix='/doctor')
     app.register_blueprint(auth.bp)
+    app.register_blueprint(chat_ai_bp, url_prefix='/chat-ai')
 
     # Setup user loader
     from app.models.user import User
@@ -64,5 +57,13 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+    
+    # Import và tạo các bảng trong database
+    with app.app_context():
+        from app.models.user import User
+        from app.models.medical_record import MedicalRecord, Notification
+        from app.models.chat_history import ChatHistory
+        db.create_all()
+        print("Database tables created")
     
     return app

@@ -6,8 +6,9 @@ from flask_mail import Message
 from app.models.user import User
 from app.forms import (LoginForm, RegistrationForm, ResetPasswordForm, 
                     ResetPasswordRequestForm)
-# Thay đổi dòng import
-from app import db, s, mail
+from app import db, mail
+import random
+from flask import current_app
 
 bp = Blueprint('auth', __name__)
 
@@ -98,86 +99,133 @@ def reset_password(token):
 
 @bp.route('/send_reset_code', methods=['POST'])
 def send_reset_code():
-    email = request.json.get('email')
-    if not email:
-        return jsonify({'error': 'Email is required'}), 400
-        
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'No account found with this email'}), 404
-    
-    # Generate a 6-digit code
-    reset_code = ''.join(random.choices('0123456789', k=6))
-    
-    # Store the code and expiration time (10 minutes from now)
-    user.reset_code = reset_code
-    user.reset_code_expiry = datetime.utcnow() + timedelta(minutes=10)
-    db.session.commit()
-    
-    # Send email with reset code
     try:
-        msg = Message('Password Reset Code',
-                     sender='noreply@yourdomain.com',
-                     recipients=[email])
-        msg.body = f'''Your password reset code is: {reset_code}
+        data = request.get_json()
+        print("Received data:", data)
         
-This code will expire in 10 minutes.
-If you did not request a password reset, please ignore this email.'''
-        mail.send(msg)
-        return jsonify({'message': 'Reset code sent successfully'}), 200
+        if not data:
+            print("No JSON data received")
+            return jsonify({'error': 'Không nhận được dữ liệu JSON'}), 400
+            
+        email = data.get('email')
+        print("Email:", email)
+        
+        if not email:
+            print("No email provided")
+            return jsonify({'error': 'Vui lòng nhập địa chỉ email'}), 400
+            
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            print(f"User not found for email: {email}")
+            return jsonify({'error': 'Không tìm thấy tài khoản với email này'}), 404
+        
+        reset_code = ''.join(random.choices('0123456789', k=6))
+        print(f"Generated reset code: {reset_code}")
+        
+        user.reset_code = reset_code
+        user.reset_code_expiry = datetime.utcnow() + timedelta(minutes=1)
+        
+        try:
+            db.session.commit()
+            print("Reset code saved to database")
+        except Exception as db_error:
+            print(f"Database error: {str(db_error)}")
+            db.session.rollback()
+            return jsonify({'error': 'Lỗi cập nhật cơ sở dữ liệu'}), 500
+        
+        try:
+            msg = Message(
+                subject='CODE FOR RESET PASSWORD AT MEDICAL RECORD',
+                recipients=[email],
+                body=f'''Mã xác thực của bạn là: {reset_code}
+
+Mã này sẽ hết hạn sau 1 phút.
+Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.'''
+            )
+            
+            mail.send(msg)
+            print("Email sent successfully")
+            
+            return jsonify({
+                'message': 'Mã xác thực đã được gửi đến email của bạn',
+                'expiresIn': 60
+            }), 200
+            
+        except Exception as mail_error:
+            print(f"Email error details: {str(mail_error)}")
+            if hasattr(mail_error, 'stderr'):
+                print(f"SMTP error output: {mail_error.stderr}")
+            db.session.rollback()
+            return jsonify({'error': f'Lỗi gửi email: {str(mail_error)}'}), 500
+            
     except Exception as e:
-        return jsonify({'error': 'Failed to send reset code'}), 500
+        print(f"General error: {str(e)}")
+        if hasattr(e, '__traceback__'):
+            import traceback
+            print("Traceback:")
+            traceback.print_tb(e.__traceback__)
+        db.session.rollback()
+        return jsonify({'error': 'Có lỗi xảy ra. Vui lòng thử lại sau.'}), 500
 
 @bp.route('/verify_reset_code', methods=['POST'])
 def verify_reset_code():
-    email = request.json.get('email')
-    code = request.json.get('code')
-    
-    if not email or not code:
-        return jsonify({'error': 'Email and code are required'}), 400
+    try:
+        email = request.json.get('email')
+        code = request.json.get('code')
         
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'Invalid email'}), 404
+        if not email or not code:
+            return jsonify({'error': 'Vui lòng nhập đầy đủ thông tin'}), 400
+            
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'Email không hợp lệ'}), 404
+            
+        if not user.reset_code or not user.reset_code_expiry:
+            return jsonify({'error': 'Chưa có mã xác thực nào được gửi'}), 400
+            
+        if datetime.utcnow() > user.reset_code_expiry:
+            return jsonify({'error': 'Mã xác thực đã hết hạn'}), 400
+            
+        if user.reset_code != code:
+            return jsonify({'error': 'Mã xác thực không đúng'}), 400
+            
+        return jsonify({'message': 'Xác thực thành công'}), 200
         
-    if not user.reset_code or not user.reset_code_expiry:
-        return jsonify({'error': 'No reset code requested'}), 400
-        
-    if datetime.utcnow() > user.reset_code_expiry:
-        return jsonify({'error': 'Reset code has expired'}), 400
-        
-    if user.reset_code != code:
-        return jsonify({'error': 'Invalid reset code'}), 400
-        
-    return jsonify({'message': 'Code verified successfully'}), 200
+    except Exception as e:
+        print(f"Error verifying code: {str(e)}")
+        return jsonify({'error': 'Có lỗi xảy ra. Vui lòng thử lại.'}), 500
 
 @bp.route('/reset_password_with_code', methods=['POST'])
 def reset_password_with_code():
-    email = request.json.get('email')
-    code = request.json.get('code')
-    new_password = request.json.get('new_password')
-    
-    if not email or not code or not new_password:
-        return jsonify({'error': 'All fields are required'}), 400
+    try:
+        email = request.json.get('email')
+        code = request.json.get('code')
+        new_password = request.json.get('new_password')
         
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'Invalid email'}), 404
+        if not email or not code or not new_password:
+            return jsonify({'error': 'Vui lòng nhập đầy đủ thông tin'}), 400
+            
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'Email không hợp lệ'}), 404
+            
+        if not user.reset_code or not user.reset_code_expiry:
+            return jsonify({'error': 'Chưa có mã xác thực nào được gửi'}), 400
+            
+        if datetime.utcnow() > user.reset_code_expiry:
+            return jsonify({'error': 'Mã xác thực đã hết hạn'}), 400
+            
+        if user.reset_code != code:
+            return jsonify({'error': 'Mã xác thực không đúng'}), 400
         
-    if not user.reset_code or not user.reset_code_expiry:
-        return jsonify({'error': 'No reset code requested'}), 400
+        user.password_hash = generate_password_hash(new_password)
+        user.reset_code = None
+        user.reset_code_expiry = None
+        db.session.commit()
         
-    if datetime.utcnow() > user.reset_code_expiry:
-        return jsonify({'error': 'Reset code has expired'}), 400
+        return jsonify({'message': 'Đặt lại mật khẩu thành công'}), 200
         
-    if user.reset_code != code:
-        return jsonify({'error': 'Invalid reset code'}), 400
-    
-    # Update password
-    user.password_hash = generate_password_hash(new_password)
-    # Clear reset code
-    user.reset_code = None
-    user.reset_code_expiry = None
-    db.session.commit()
-    
-    return jsonify({'message': 'Password reset successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error resetting password: {str(e)}")
+        return jsonify({'error': 'Không thể đặt lại mật khẩu. Vui lòng thử lại sau.'}), 500
