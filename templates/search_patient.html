@@ -61,11 +61,17 @@
                             </td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <a href="{{ url_for('view_patient_records', patient_id=patient.id) }}" class="btn btn-primary btn-sm">
+                                    <a href="{{ url_for('doctor.view_patient_records', patient_id=patient.id) }}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-file-medical me-1"></i> View Records
+                                    </a>
+                                    <a href="{{ url_for('doctor.view_charts', patient_id=patient.id) }}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-chart-line me-1"></i> View Charts
                                     </a>
                                     <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#notificationModal{{ patient.id }}">
                                         <i class="fas fa-bell me-1"></i> Send Notification
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm start-chat-btn" data-patient-id="{{ patient.id }}" data-patient-name="{{ patient.username }}">
+                                        <i class="fas fa-comments me-1"></i> Chat
                                     </button>
                                 </div>
                             </td>
@@ -79,12 +85,12 @@
                                         <h5 class="modal-title">Send Notification to {{ patient.username }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form id="notificationForm{{ patient.id }}" action="{{ url_for('send_notification', patient_id=patient.id) }}" method="post">
+                                    <form id="notificationForm{{ patient.id }}" action="{{ url_for('doctor.send_notification', patient_id=patient.id) }}" method="post">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <div class="modal-body">
                                             <div class="mb-3">
                                                 <label for="message{{ patient.id }}" class="form-label">Message</label>
-                                                <textarea class="form-control" id="message{{ patient.id }}" name="message" rows="4" required></textarea>
+                                                <textarea class="form-control notification-textarea" id="message{{ patient.id }}" name="message" rows="4" required></textarea>
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -268,82 +274,170 @@
         font-size: 0.75rem;
     }
 }
+
+.modal textarea.notification-textarea {
+    resize: vertical;
+    min-height: 100px;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.modal textarea.notification-textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+.modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 300px;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 1.75rem auto;
+    pointer-events: auto;
+    padding: 0 15px;
+}
 </style>
 
 <script>
 // Search functionality
-document.getElementById('patientSearch').addEventListener('input', function(e) {
-    const searchText = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-        const username = row.querySelector('h6').textContent.toLowerCase();
-        const name = row.querySelector('small').textContent.toLowerCase();
-        const email = row.querySelector('.fa-envelope').nextElementSibling.textContent.toLowerCase();
-        const id = row.querySelector('.badge').textContent.toLowerCase();
-        
-        if (username.includes(searchText) || name.includes(searchText) || 
-            email.includes(searchText) || id.includes(searchText)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-});
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle notification form submissions
-    var notificationForms = document.querySelectorAll('form[id^="notificationForm"]');
-    notificationForms.forEach(function(form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
+    const searchInput = document.getElementById('patientSearch');
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const patientName = row.querySelector('h6').textContent.toLowerCase();
+            const patientFullName = row.querySelector('small').textContent.toLowerCase();
+            const patientId = row.querySelector('.badge').textContent.toLowerCase();
+            const patientEmail = row.querySelectorAll('td')[1].querySelectorAll('span')[0].textContent.toLowerCase();
+            const patientPhone = row.querySelectorAll('td')[1].querySelectorAll('span')[1].textContent.toLowerCase();
             
-            try {
-                const formData = new FormData(form);
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Close modal using Bootstrap's hide method
-                    const modalElement = form.closest('.modal');
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) {
-                        modal.hide();
-                    } else {
-                        // Fallback if Bootstrap modal instance not found
-                        modalElement.style.display = 'none';
-                        document.body.classList.remove('modal-open');
-                    }
-                    
-                    // Clear form
-                    form.reset();
-                    
-                    // Show success message
-                    alert(data.message);
-                } else {
-                    alert(data.message || 'Failed to send notification. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+            if (patientName.includes(searchTerm) || 
+                patientFullName.includes(searchTerm) || 
+                patientId.includes(searchTerm) || 
+                patientEmail.includes(searchTerm) || 
+                patientPhone.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
         });
     });
 
-    // Initialize Bootstrap modals
-    var modals = document.querySelectorAll('.modal');
-    modals.forEach(function(modal) {
-        new bootstrap.Modal(modal, {
-            backdrop: true,
-            keyboard: true,
-            focus: true
+    // Handle notification form submission
+    document.querySelectorAll('[id^=notificationForm]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const patientId = this.id.replace('notificationForm', '');
+            const messageInput = document.getElementById('message' + patientId);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const modalElement = document.getElementById('notificationModal' + patientId);
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+            
+            const formData = new FormData();
+            formData.append('message', messageInput.value);
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message and close modal
+                    alert(data.message);
+                    modal.hide();
+                    messageInput.value = '';
+                } else {
+                    alert(data.message || 'Error sending notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while sending the notification');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Send';
+            });
+        });
+    });
+
+    // Handle chat button clicks
+    document.querySelectorAll('.start-chat-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const patientId = this.dataset.patientId;
+            const patientName = this.dataset.patientName;
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connecting...';
+            this.disabled = true;
+            
+            // Start or continue a conversation
+            const formData = new FormData();
+            formData.append('patient_id', patientId);
+            formData.append('csrf_token', '{{ csrf_token() }}');
+            
+            fetch('{{ url_for("doctor.start_conversation") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redirect to the conversation
+                    window.location.href = `/doctor/conversation/${data.conversation_id}`;
+                } else {
+                    // Show error message
+                    console.error("Error from server:", data.message);
+                    alert(data.message || 'Could not start conversation');
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`An error occurred: ${error.message}. Please try again or contact support.`);
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
         });
     });
 });
