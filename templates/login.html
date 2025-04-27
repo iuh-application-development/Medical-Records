@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0 rounded-4 login-card">
+                <div class="card-body p-5">
+                    <!-- Character Container -->
+                    <div class="character-container text-center mb-4">
+                        <div class="character">
+                            <div class="face">
+                                <div class="eyes">
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                </div>
+                                <div class="expression"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-center fw-bold mb-4">Welcome Back!</h2>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-floating mb-3">
+                            {{ form.username(class="form-control bg-light border-0", placeholder="Username") }}
+                            {{ form.username.label }}
+                            {% if form.username.errors %}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-floating mb-4">
+                            {{ form.password(class="form-control bg-light border-0", placeholder="Password") }}
+                            {{ form.password.label }}
+                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted password-toggle">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            {% if form.password.errors %}
+                                {% for error in form.password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.remember(class="form-check-input") }}
+                            {{ form.remember.label(class="form-check-label") }}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="#" class="text-primary text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                Forgot Password?
+                            </a>
+                        </div>
+                        
+                        <p class="text-center text-muted mt-3 mb-0">
+                            Don't have an account? 
+                            <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none">Register here</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+}
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.character-container {
+    height: 120px;
+    position: relative;
+}
+
+.character {
+    width: 100px;
+    height: 100px;
+    background: #74b9ff;
+    border-radius: 50%;
+    position: relative;
+    margin: 0 auto;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.face {
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 60%;
+}
+
+.eyes {
+    position: relative;
+    top: 25%;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 10px;
+}
+
+.eye {
+    width: 8px;
+    height: 8px;
+    background: #2d3436;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.expression {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 8px;
+    background: #2d3436;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.character.happy .expression {
+    width: 24px;
+    height: 12px;
+    border-radius: 0 0 12px 12px;
+    bottom: 15%;
+}
+
+.character.worried .expression {
+    width: 20px;
+    height: 8px;
+    border-radius: 10px;
+    transform: translateX(-50%) rotate(180deg);
+    bottom: 25%;
+}
+
+.form-floating > .form-control {
+    border-radius: 10px;
+    padding: 1rem 1rem;
+}
+
+.form-floating > .form-control:focus {
+    box-shadow: none;
+    border-color: var(--bs-primary);
+}
+
+.form-floating > label {
+    padding: 1rem 1rem;
+}
+
+.password-toggle {
+    padding: 1rem;
+    z-index: 5;
+}
+
+.password-toggle:hover {
+    color: var(--bs-primary) !important;
+}
+
+.btn-primary {
+    border-radius: 10px;
+    padding: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.4);
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const character = document.querySelector('.character');
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.querySelector('.password-toggle');
+    
+    // Password visibility toggle
+    passwordToggle.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+    
+    // Character animation based on password input
+    passwordInput.addEventListener('input', function() {
+        if (this.value.length === 0) {
+            character.className = 'character';
+        } else if (this.value.length < 6) {
+            character.className = 'character worried';
+        } else {
+            character.className = 'character happy';
+        }
+    });
+    
+    // Eye following mouse movement
+    const eyes = document.querySelectorAll('.eye');
+    document.addEventListener('mousemove', function(e) {
+        eyes.forEach(eye => {
+            const rect = eye.getBoundingClientRect();
+            const x = (rect.left + rect.width / 2);
+            const y = (rect.top + rect.height / 2);
+            const rad = Math.atan2(e.pageX - x, e.pageY - y);
+            const rot = (rad * (180 / Math.PI) * -1) + 180;
+            eye.style.transform = `rotate(${rot}deg)`;
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block modals %}
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Đặt lại mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Enter Email -->
+                <div class="step" id="step1">
+                    <p class="text-muted mb-4">Nhập địa chỉ email của bạn để nhận mã xác thực.</p>
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control bg-light border-0" id="resetEmail" placeholder="Email">
+                        <label for="resetEmail">Địa chỉ email</label>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary py-2" onclick="sendVerificationCode()">
+                            Gửi mã xác thực
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Enter Verification Code -->
+                <div class="step d-none" id="step2">
+                    <p class="text-muted mb-4">Nhập mã xác thực đã được gửi đến email của bạn.</p>
+                    <div class="verification-code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                        <input type="text" maxlength="1" class="form-control code-input">
+                    </div>
+                    <div class="timer text-center mb-3"></div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary py-2" onclick="verifyCode()">
+                            Xác thực
+                        </button>
+                        <button class="btn btn-link text-muted resend-button" onclick="sendVerificationCode()" disabled>
+                            Gửi lại mã
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Set New Password -->
+                <div class="step d-none" id="step3">
+                    <p class="text-muted mb-4">Tạo mật khẩu mới cho tài khoản của bạn.</p>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control bg-light border-0" id="newPassword" placeholder="Mật khẩu mới">
+                        <label for="newPassword">Mật khẩu mới</label>
+                        <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted password-toggle">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control bg-light border-0" id="confirmNewPassword" placeholder="Xác nhận mật khẩu">
+                        <label for="confirmNewPassword">Xác nhận mật khẩu</label>
+                        <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted password-toggle">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary py-2" onclick="resetPassword()">
+                            Đặt lại mật khẩu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.modal-backdrop {
+    z-index: 1050;
+}
+
+.modal {
+    z-index: 1055;
+}
+
+.modal-dialog {
+    z-index: 1056;
+}
+
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+    background: white;
+    z-index: 1057;
+}
+
+.modal-header,
+.modal-body {
+    background: white;
+    z-index: 1058;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.verification-code-input {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.code-input {
+    width: 45px;
+    height: 45px;
+    text-align: center;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.code-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+.btn-link {
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.step {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Timer styles */
+.timer {
+    text-align: center;
+    margin-top: 10px;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.resend-button {
+    background: none;
+    border: none;
+    color: #0d6efd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.resend-button:disabled {
+    color: #6c757d;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Thêm biến để theo dõi thời gian
+let countdownInterval;
+let timeLeft = 0;
+
+function startCountdown(duration) {
+    clearInterval(countdownInterval);
+    timeLeft = duration;
+    updateTimer();
+    
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            document.querySelector('.resend-button').disabled = false;
+        }
+    }, 1000);
+}
+
+function updateTimer() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const timerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    document.querySelector('.timer').textContent = `Còn lại: ${timerText}`;
+}
+
+let resetEmail = ''; // Biến để lưu email đã nhập
+
+async function sendVerificationCode() {
+    const email = document.getElementById('resetEmail').value;
+    if (!email) {
+        alert('Vui lòng nhập địa chỉ email');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/send_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Lưu email và bắt đầu đếm ngược
+            resetEmail = email;
+            document.getElementById('step1').classList.add('d-none');
+            document.getElementById('step2').classList.remove('d-none');
+            
+            // Bắt đầu đếm ngược 1 phút (60 giây)
+            startCountdown(data.expiresIn || 60); // Use expiresIn from response, default 60
+            document.querySelector('.resend-button').disabled = true;
+            
+            // Focus vào ô nhập mã đầu tiên
+            document.querySelector('.code-input').focus();
+        } else {
+            alert(data.error || 'Không thể gửi mã xác thực');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Đã xảy ra lỗi. Vui lòng thử lại.');
+    }
+}
+
+async function verifyCode() {
+    const inputs = document.querySelectorAll('.code-input');
+    let code = '';
+    inputs.forEach(input => {
+        code += input.value;
+    });
+
+    if (code.length !== 6) {
+        alert('Vui lòng nhập đủ 6 chữ số của mã xác thực.');
+        return;
+    }
+
+    if (!resetEmail) {
+        alert('Không tìm thấy email. Vui lòng thử lại từ đầu.');
+        // Reset modal
+        const modalElement = document.getElementById('forgotPasswordModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide(); // Hide if instance exists
+        return;
+    }
+
+    try {
+        const response = await fetch('/verify_reset_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ email: resetEmail, code })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Chuyển sang bước 3
+            document.getElementById('step2').classList.add('d-none');
+            document.getElementById('step3').classList.remove('d-none');
+            clearInterval(countdownInterval); // Dừng đếm ngược
+        } else {
+            alert(data.error || 'Mã xác thực không đúng hoặc đã hết hạn.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Đã xảy ra lỗi khi xác thực mã. Vui lòng thử lại.');
+    }
+}
+
+async function resetPassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+    const inputs = document.querySelectorAll('.code-input');
+    let code = '';
+    inputs.forEach(input => {
+        code += input.value;
+    });
+
+    if (!newPassword || !confirmNewPassword) {
+        alert('Vui lòng nhập mật khẩu mới và xác nhận mật khẩu.');
+        return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+        alert('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+        return;
+    }
+
+    if (code.length !== 6 || !resetEmail) {
+        alert('Thông tin không hợp lệ. Vui lòng thử lại từ đầu.');
+         // Reset modal
+        const modalElement = document.getElementById('forgotPasswordModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
+        return;
+    }
+
+    try {
+        const response = await fetch('/reset_password_with_code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                email: resetEmail,
+                code: code,
+                new_password: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Đặt lại mật khẩu thành công!');
+            // Đóng modal
+            const modalElement = document.getElementById('forgotPasswordModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) modal.hide();
+        } else {
+            alert(data.error || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại.');
+    }
+}
+
+// Xử lý nhập mã xác thực
+document.querySelectorAll('.code-input').forEach((input, index) => {
+    input.addEventListener('keyup', (e) => {
+        if (e.key >= '0' && e.key <= '9') {
+            // Tự động chuyển sang ô tiếp theo
+            if (index < 5) {
+                document.querySelectorAll('.code-input')[index + 1].focus();
+            }
+        } else if (e.key === 'Backspace') {
+            // Quay lại ô trước đó khi xóa
+            if (index > 0 && !input.value) {
+                document.querySelectorAll('.code-input')[index - 1].focus();
+            }
+        }
+    });
+    
+    // Chỉ cho phép nhập số
+    input.addEventListener('keypress', (e) => {
+        if (e.key < '0' || e.key > '9') {
+            e.preventDefault();
+        }
+    });
+    
+    // Xử lý paste
+    input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData('text');
+        const numbers = paste.match(/\d/g);
+        
+        if (numbers) {
+            const inputs = document.querySelectorAll('.code-input');
+            numbers.forEach((num, idx) => {
+                if (idx < 6) {
+                    inputs[idx].value = num;
+                }
+            });
+            if (numbers.length === 6) {
+                inputs[5].focus();
+            }
+        }
+    });
+});
+
+// Password visibility toggles for reset password form
+document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function() {
+        const input = this.previousElementSibling; // Lấy input đứng trước nút toggle
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+});
+
+// Reset modal state when closed
+document.getElementById('forgotPasswordModal').addEventListener('hidden.bs.modal', function () {
+    // Reset form fields and steps
+    document.getElementById('step1').classList.remove('d-none');
+    document.getElementById('step2').classList.add('d-none');
+    document.getElementById('step3').classList.add('d-none');
+    document.getElementById('resetEmail').value = '';
+    document.querySelectorAll('.code-input').forEach(input => input.value = '');
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmNewPassword').value = '';
+    
+    // Explicitly remove modal-open class from body
+    document.body.classList.remove('modal-open');
+    
+    // Remove any lingering backdrop elements
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+    
+    // Ensure scrollbars are restored if needed
+    document.body.style.overflow = ''; 
+    document.body.style.paddingRight = '';
+});
+</script>
+{% endblock %}
