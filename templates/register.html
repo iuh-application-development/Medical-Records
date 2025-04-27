@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0 rounded-4 register-card">
+                <div class="card-body p-5">
+                    <!-- Character Container -->
+                    <div class="character-container text-center mb-4">
+                        <div class="character">
+                            <div class="face">
+                                <div class="eyes">
+                                    <div class="eye left"></div>
+                                    <div class="eye right"></div>
+                                </div>
+                                <div class="expression"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-center fw-bold mb-4">Create Account</h2>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('auth.register') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-floating mb-3">
+                            {{ form.username(class="form-control bg-light border-0", placeholder="Username") }}
+                            {{ form.username.label }}
+                            {% if form.username.errors %}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-floating mb-3">
+                            {{ form.email(class="form-control bg-light border-0", placeholder="Email") }}
+                            {{ form.email.label }}
+                            {% if form.email.errors %}
+                                {% for error in form.email.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            {{ form.phone(class="form-control bg-light border-0", placeholder="Phone") }}
+                            {{ form.phone.label }}
+                            {% if form.phone.errors %}
+                                {% for error in form.phone.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            {{ form.password(class="form-control bg-light border-0", placeholder="Password") }}
+                            {{ form.password.label }}
+                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted password-toggle">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            {% if form.password.errors %}
+                                {% for error in form.password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            {{ form.confirm_password(class="form-control bg-light border-0", placeholder="Confirm Password") }}
+                            {{ form.confirm_password.label }}
+                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted confirm-password-toggle">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            {% if form.confirm_password.errors %}
+                                {% for error in form.confirm_password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </div>
+                        
+                        <p class="text-center text-muted mb-0">
+                            Already have an account? 
+                            <a href="{{ url_for('auth.login') }}" class="text-primary text-decoration-none">Login here</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.register-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+}
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.character-container {
+    height: 120px;
+    position: relative;
+}
+
+.character {
+    width: 100px;
+    height: 100px;
+    background: #74b9ff;
+    border-radius: 50%;
+    position: relative;
+    margin: 0 auto;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.face {
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 60%;
+}
+
+.eyes {
+    position: relative;
+    top: 25%;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 10px;
+}
+
+.eye {
+    width: 8px;
+    height: 8px;
+    background: #2d3436;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.expression {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 8px;
+    background: #2d3436;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.character.happy .expression {
+    width: 24px;
+    height: 12px;
+    border-radius: 0 0 12px 12px;
+    bottom: 15%;
+}
+
+.character.worried .expression {
+    width: 20px;
+    height: 8px;
+    border-radius: 10px;
+    transform: translateX(-50%) rotate(180deg);
+    bottom: 25%;
+}
+
+.form-floating > .form-control {
+    border-radius: 10px;
+    padding: 1rem 1rem;
+}
+
+.form-floating > .form-control:focus {
+    box-shadow: none;
+    border-color: var(--bs-primary);
+}
+
+.form-floating > label {
+    padding: 1rem 1rem;
+}
+
+.password-toggle,
+.confirm-password-toggle {
+    padding: 1rem;
+    z-index: 5;
+}
+
+.password-toggle:hover,
+.confirm-password-toggle:hover {
+    color: var(--bs-primary) !important;
+}
+
+.btn-primary {
+    border-radius: 10px;
+    padding: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.4);
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const character = document.querySelector('.character');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const passwordToggle = document.querySelector('.password-toggle');
+    const confirmPasswordToggle = document.querySelector('.confirm-password-toggle');
+    
+    // Password visibility toggle
+    passwordToggle.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+
+    // Confirm password visibility toggle
+    confirmPasswordToggle.addEventListener('click', function() {
+        const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        confirmPasswordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+    
+    // Character animation based on password input
+    passwordInput.addEventListener('input', function() {
+        if (this.value.length === 0) {
+            character.className = 'character';
+        } else if (this.value.length < 6) {
+            character.className = 'character worried';
+        } else {
+            character.className = 'character happy';
+        }
+    });
+    
+    // Eye following mouse movement
+    const eyes = document.querySelectorAll('.eye');
+    document.addEventListener('mousemove', function(e) {
+        eyes.forEach(eye => {
+            const rect = eye.getBoundingClientRect();
+            const x = (rect.left + rect.width / 2);
+            const y = (rect.top + rect.height / 2);
+            const rad = Math.atan2(e.pageX - x, e.pageY - y);
+            const rot = (rad * (180 / Math.PI) * -1) + 180;
+            eye.style.transform = `rotate(${rot}deg)`;
+        });
+    });
+});
+</script>
+{% endblock %}
