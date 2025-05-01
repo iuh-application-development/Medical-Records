@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}Medical Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Medical Records - Patient: {{ patient.full_name }} ({{ patient.username }})</h2>
+            {% if records %}
+                {% if current_user.role == 'doctor' %}
+                <div class="mb-4">
+                    <h4>Patient Information:</h4>
+                    <p><strong>Name:</strong> {{ patient.full_name }}</p>
+                    <p><strong>Email:</strong> {{ patient.email }}</p>
+                    <p><strong>Phone:</strong> {{ patient.phone }}</p>
+                </div>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Date</th>
+                                <th>HGB (g/dL)<br><small class="text-muted">12-16</small></th>
+                                <th>RBC (M/μL)<br><small class="text-muted">4.2-5.4</small></th>
+                                <th>WBC (K/μL)<br><small class="text-muted">4.5-11.0</small></th>
+                                <th>PLT (K/μL)<br><small class="text-muted">150-450</small></th>
+                                <th>HCT (%)<br><small class="text-muted">36-46</small></th>
+                                <th>Glucose (mg/dL)<br><small class="text-muted">70-100</small></th>
+                                <th>Creatinine (mg/dL)<br><small class="text-muted">0.7-1.3</small></th>
+                                <th>ALT (U/L)<br><small class="text-muted">7-56</small></th>
+                                <th>Cholesterol (mg/dL)<br><small class="text-muted">< 200</small></th>
+                                <th>CRP (mg/L)<br><small class="text-muted">< 3.0</small></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                <td class="{% if record.hgb and (record.hgb < 12 or record.hgb > 16) %}table-danger{% endif %}">{{ record.hgb }}</td>
+                                <td class="{% if record.rbc and (record.rbc < 4.2 or record.rbc > 5.4) %}table-danger{% endif %}">{{ record.rbc }}</td>
+                                <td class="{% if record.wbc and (record.wbc < 4.5 or record.wbc > 11.0) %}table-danger{% endif %}">{{ record.wbc }}</td>
+                                <td class="{% if record.plt and (record.plt < 150 or record.plt > 450) %}table-danger{% endif %}">{{ record.plt }}</td>
+                                <td class="{% if record.hct and (record.hct < 36 or record.hct > 46) %}table-danger{% endif %}">{{ record.hct }}</td>
+                                <td class="{% if record.glucose and (record.glucose < 70 or record.glucose > 100) %}table-danger{% endif %}">{{ record.glucose }}</td>
+                                <td class="{% if record.creatinine and (record.creatinine < 0.7 or record.creatinine > 1.3) %}table-danger{% endif %}">{{ record.creatinine }}</td>
+                                <td class="{% if record.alt and (record.alt < 7 or record.alt > 56) %}table-danger{% endif %}">{{ record.alt }}</td>
+                                <td class="{% if record.cholesterol and record.cholesterol > 200 %}table-danger{% endif %}">{{ record.cholesterol }}</td>
+                                <td class="{% if record.crp and record.crp > 3.0 %}table-danger{% endif %}">{{ record.crp }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if current_user.role == 'doctor' %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                    <a href="{{ url_for('doctor.view_charts', patient_id=patient.id) }}" class="btn btn-info">
+                        <i class="fas fa-chart-line"></i> View Charts
+                    </a>
+                    <a href="{{ url_for('doctor.download_records', patient_id=patient.id) }}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Download CSV
+                    </a>
+                    <button type="button" class="btn btn-primary" id="openNotificationBtn">
+                        <i class="fas fa-bell"></i> Send Notification
+                    </button>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info text-center">
+                    No medical records found.
+                    {% if current_user.role == 'patient' %}
+                    <br>
+                    <a href="{{ url_for('patient.new_record') }}" class="btn btn-primary mt-2">Add New Record</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+{% if current_user.role == 'doctor' %}
+<!-- Notification Modal -->
+<div class="custom-modal-container" id="notificationModalContainer">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h5>Send Notification to {{ patient.username }}</h5>
+            <button type="button" class="custom-close-btn" id="closeNotificationModal">&times;</button>
+            </div>
+        <form id="notificationFormView" method="POST" action="{{ url_for('doctor.send_notification', patient_id=patient.id) }}">
+            <div class="custom-modal-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                    <label for="messageField" class="form-label">Message</label>
+                    <textarea class="form-control" id="messageField" name="message" rows="3" required></textarea>
+                </div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelNotificationBtn">Close</button>
+                <button type="submit" class="btn btn-primary" id="sendNotificationBtn">Send</button>
+                </div>
+            </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Custom Modal Styles */
+    .custom-modal-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .custom-modal {
+        background-color: white;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .custom-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    
+    .custom-modal-body {
+        padding: 1rem;
+    }
+    
+    .custom-modal-footer {
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    
+    .modal-backdrop {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Lấy phần tử modal
+    const modalContainer = document.getElementById('notificationModalContainer');
+    const openModalBtn = document.getElementById('openNotificationBtn');
+    const closeModalBtn = document.getElementById('closeNotificationModal');
+    const cancelBtn = document.getElementById('cancelNotificationBtn');
+    const notificationForm = document.getElementById('notificationFormView');
+    
+    // Mở modal
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+            modalContainer.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Ngăn scroll trên body
+        });
+    }
+    
+    // Đóng modal
+    const closeModal = function() {
+        modalContainer.style.display = 'none';
+        document.body.style.overflow = ''; // Bật lại scroll
+    };
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal);
+    }
+    
+    // Đóng modal khi click ngoài modal
+    if (modalContainer) {
+        modalContainer.addEventListener('click', function(e) {
+            if (e.target === modalContainer) {
+                closeModal();
+            }
+        });
+    }
+    
+    // Xử lý gửi form
+    if (notificationForm) {
+        notificationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('sendNotificationBtn');
+            const messageInput = document.getElementById('messageField');
+            
+            // Hiển thị trạng thái loading
+            submitBtn.disabled = true;
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+            
+            // Lấy CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+            
+            // Tạo FormData
+            const formData = new FormData();
+            formData.append('message', messageInput.value);
+            formData.append('csrf_token', csrfToken);
+            
+            // Gửi request
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Thông báo thành công
+                    alert(data.message);
+                    
+                    // Đóng modal và reset form
+                    closeModal();
+                    messageInput.value = '';
+                } else {
+                    // Thông báo lỗi
+                    alert(data.message || 'Error sending notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while sending the notification');
+            })
+            .finally(() => {
+                // Reset trạng thái button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

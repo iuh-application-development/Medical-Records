@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Search Doctor{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary mb-0">List Of Doctors</h2>
+                <div class="search-box">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="doctorSearch" placeholder="Search Doctor...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Doctor</th>
+                            <th>Contact Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doctor in doctors %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {% if doctor.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/' + doctor.avatar) }}" alt="Avatar">
+                                        {% else %}
+                                        <span class="avatar-initial">{{ doctor.username[0].upper() }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{ doctor.username }}</h6>
+                                        <small class="text-muted">{{ doctor.full_name or 'Chưa cung cấp' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <span>{{ doctor.email }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-phone text-muted me-2"></i>
+                                        <span>{{ doctor.phone or 'Chưa cung cấp' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-box .input-group {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.search-box .input-group-text {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initial {
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    position: relative;
+    z-index: 2;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+</style>
+
+<script>
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('doctorSearch');
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const doctorName = row.querySelector('h6').textContent.toLowerCase();
+            const doctorFullName = row.querySelector('small').textContent.toLowerCase();
+            const doctorEmail = row.querySelectorAll('td')[1].querySelectorAll('span')[0].textContent.toLowerCase();
+            const doctorPhone = row.querySelectorAll('td')[1].querySelectorAll('span')[1].textContent.toLowerCase();
+            
+            if (doctorName.includes(searchTerm) || 
+                doctorFullName.includes(searchTerm) || 
+                doctorEmail.includes(searchTerm) || 
+                doctorPhone.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 
