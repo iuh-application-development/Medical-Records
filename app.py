@@ -8,7 +8,7 @@ app = create_app()
 # Create database tables and admin user
 with app.app_context():
     from app.models.user import User
-    
+    from app.models.medical_record import MedicalRecord, Notification
     
     db.create_all()
     
