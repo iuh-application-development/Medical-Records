@@ -185,14 +185,13 @@
         <div class="modal-content border-0 rounded-4">
             <div class="modal-header border-0">
                 <h5 class="modal-title fw-bold">Send Notification</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="buttton" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('send_notification', patient_id=patient.id) }}" method="post">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label text-muted">Patient</label>
                         <div class="form-control bg-light border-0">
-                            {{ patient.username }} ({{ patient.full_name or 'Not provided' }})
                         </div>
                     </div>
                     <div class="mb-3">
