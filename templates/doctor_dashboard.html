@@ -185,13 +185,14 @@
         <div class="modal-content border-0 rounded-4">
             <div class="modal-header border-0">
                 <h5 class="modal-title fw-bold">Send Notification</h5>
-                <button type="buttton" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('send_notification', patient_id=patient.id) }}" method="post">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label text-muted">Patient</label>
                         <div class="form-control bg-light border-0">
+                            {{ patient.username }} ({{ patient.full_name or 'Not provided' }})
                         </div>
                     </div>
                     <div class="mb-3">
@@ -213,9 +214,23 @@
 {% endfor %}
 
 <style>
+.welcome-card, .stats-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+}
 
-
-
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 .avatar-circle {
     width: 60px;
@@ -241,6 +256,19 @@
     font-size: 1.5rem;
 }
 
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.list-group-item {
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
 .modal-content {
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
@@ -253,6 +281,14 @@
     padding: 1.5rem;
 }
 
+.modal-footer {
+    padding: 1.5rem;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: var(--bs-primary);
+}
 
 @media (max-width: 768px) {
     .card-body {
