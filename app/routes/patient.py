@@ -44,3 +44,32 @@ def profile():
         form.email.data = current_user.email
     
     return render_template('profile.html', form=form)
+
+@bp.route('/new_record', methods=['GET', 'POST'])
+@login_required
+def new_record():
+    if current_user.role != 'patient':
+        flash('Only patients can create medical records.', 'danger')
+        return redirect(url_for('index'))
+    
+    form = MedicalRecordForm()
+    if form.validate_on_submit():
+        record = MedicalRecord(
+            patient_id=current_user.id,
+            date=form.date.data,
+            hgb=form.hgb.data,
+            rbc=form.rbc.data,
+            wbc=form.wbc.data,
+            plt=form.plt.data,
+            hct=form.hct.data,
+            glucose=form.glucose.data,
+            creatinine=form.creatinine.data,
+            alt=form.alt.data,
+            cholesterol=form.cholesterol.data,
+            crp=form.crp.data
+        )
+        db.session.add(record)
+        db.session.commit()
+        flash('Medical record has been added!', 'success')
+        return redirect(url_for('patient.view_records'))
+    return render_template('new_record.html', form=form)
