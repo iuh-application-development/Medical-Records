@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}New Medical Record{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="text-center mb-4">New Medical Record</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.date.label(class="form-label") }}
+                {{ form.date(class="form-control", type="date") }}
+                {% for error in form.date.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.hgb.label(class="form-label") }}
+                        {{ form.hgb(class="form-control") }}
+                        {% for error in form.hgb.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.rbc.label(class="form-label") }}
+                        {{ form.rbc(class="form-control") }}
+                        {% for error in form.rbc.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.wbc.label(class="form-label") }}
+                        {{ form.wbc(class="form-control") }}
+                        {% for error in form.wbc.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.plt.label(class="form-label") }}
+                        {{ form.plt(class="form-control") }}
+                        {% for error in form.plt.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.hct.label(class="form-label") }}
+                        {{ form.hct(class="form-control") }}
+                        {% for error in form.hct.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.glucose.label(class="form-label") }}
+                        {{ form.glucose(class="form-control") }}
+                        {% for error in form.glucose.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.creatinine.label(class="form-label") }}
+                        {{ form.creatinine(class="form-control") }}
+                        {% for error in form.creatinine.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.alt.label(class="form-label") }}
+                        {{ form.alt(class="form-control") }}
+                        {% for error in form.alt.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.cholesterol.label(class="form-label") }}
+                        {{ form.cholesterol(class="form-control") }}
+                        {% for error in form.cholesterol.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.crp.label(class="form-label") }}
+                        {{ form.crp(class="form-control") }}
+                        {% for error in form.crp.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
