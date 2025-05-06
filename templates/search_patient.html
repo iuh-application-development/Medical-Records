@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Search Patient{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-lg border-0 rounded-4 search-card">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary mb-0">Patient List</h2>
+                <div class="search-box">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="patientSearch" placeholder="Search patients...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Contact Info</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {% if patient.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/' + patient.avatar) }}" alt="Avatar">
+                                        {% else %}
+                                        <span class="avatar-initial">{{ patient.username[0].upper() }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{ patient.username }}</h6>
+                                        <small class="text-muted">{{ patient.full_name or 'Not provided' }}</small>
+                                        <div class="mt-1">
+                                            <span class="badge bg-primary">ID: {{ patient.id }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <span>{{ patient.email }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-phone text-muted me-2"></i>
+                                        <span>{{ patient.phone or 'Not provided' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('doctor.view_patient_records', patient_id=patient.id) }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-file-medical me-1"></i> View Records
+                                    </a>
+                                    <a href="{{ url_for('doctor.view_charts', patient_id=patient.id) }}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-chart-line me-1"></i> View Charts
+                                    </a>
+                                    <button type="button" class="btn btn-info btn-sm open-notification-btn" data-patient-id="{{ patient.id }}" data-patient-name="{{ patient.username }}">
+                                        <i class="fas fa-bell me-1"></i> Send Notification
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+}
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-box .input-group {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.search-box .input-group-text {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initial {
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.table {
+    position: relative;
+    z-index: 1;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    position: relative;
+    z-index: 2;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Custom Modal Styles */
+.custom-modal-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.custom-modal {
+    background-color: white;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.custom-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.custom-modal-body {
+    padding: 1rem;
+}
+
+.custom-modal-footer {
+    padding: 1rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.notification-textarea {
+    resize: vertical;
+    min-height: 100px;
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.notification-textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+.modal-backdrop {
+    display: none !important;
+}
+
+@media (max-width: 576px) {
+    .custom-modal {
+        width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .search-box {
+        margin-top: 1rem;
+    }
+    
+    .table-responsive {
+        margin: 0 -1.5rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('patientSearch');
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const patientName = row.querySelector('h6').textContent.toLowerCase();
+            const patientFullName = row.querySelector('small').textContent.toLowerCase();
+            const patientId = row.querySelector('.badge').textContent.toLowerCase();
+            const patientEmail = row.querySelectorAll('td')[1].querySelectorAll('span')[0].textContent.toLowerCase();
+            const patientPhone = row.querySelectorAll('td')[1].querySelectorAll('span')[1].textContent.toLowerCase();
+            
+            if (patientName.includes(searchTerm) || 
+                patientFullName.includes(searchTerm) || 
+                patientId.includes(searchTerm) || 
+                patientEmail.includes(searchTerm) || 
+                patientPhone.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Open notification modals
+    document.querySelectorAll('.open-notification-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const patientId = this.dataset.patientId;
+            const modalContainer = document.getElementById('notificationContainer' + patientId);
+            
+            if (modalContainer) {
+                modalContainer.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent body scrolling
+            }
+        });
+    });
+    
+    // Close notification modals
+    document.querySelectorAll('.close-notification-btn, .cancel-notification-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const patientId = this.dataset.patientId;
+            const modalContainer = document.getElementById('notificationContainer' + patientId);
+            
+            if (modalContainer) {
+                modalContainer.style.display = 'none';
+                document.body.style.overflow = ''; // Re-enable body scrolling
+            }
+        });
+    });
+    
+    // Close when clicking outside the modal
+    document.querySelectorAll('.custom-modal-container').forEach(container => {
+        container.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Handle notification form submission
+    document.querySelectorAll('.notification-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const patientId = this.dataset.patientId;
+            const messageInput = document.getElementById('message' + patientId);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const modalContainer = document.getElementById('notificationContainer' + patientId);
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+            
+            const formData = new FormData();
+            formData.append('message', messageInput.value);
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message and close modal
+                    alert(data.message);
+                    modalContainer.style.display = 'none';
+                    document.body.style.overflow = '';
+                    messageInput.value = '';
+                } else {
+                    alert(data.message || 'Error sending notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while sending the notification');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    });
+
+    // Handle chat button clicks
+    document.querySelectorAll('.start-chat-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const patientId = this.dataset.patientId;
+            const patientName = this.dataset.patientName;
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connecting...';
+            this.disabled = true;
+            
+            // Start or continue a conversation
+            const formData = new FormData();
+            formData.append('patient_id', patientId);
+            formData.append('csrf_token', '{{ csrf_token() }}');
+            
+            fetch('{{ url_for("doctor.start_conversation") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redirect to the conversation
+                    window.location.href = `/doctor/conversation/${data.conversation_id}`;
+                } else {
+                    // Show error message
+                    console.error("Error from server:", data.message);
+                    alert(data.message || 'Could not start conversation');
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`An error occurred: ${error.message}. Please try again or contact support.`);
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block modals %}
+<!-- Notification Modals - One for each patient -->
+{% for patient in patients %}
+<div class="custom-modal-container" id="notificationContainer{{ patient.id }}">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h5>Send Notification to {{ patient.username }}</h5>
+            <button type="button" class="custom-close-btn close-notification-btn" data-patient-id="{{ patient.id }}">&times;</button>
+        </div>
+        <form class="notification-form" data-patient-id="{{ patient.id }}" action="{{ url_for('doctor.send_notification', patient_id=patient.id) }}" method="post">
+            <div class="custom-modal-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="message{{ patient.id }}" class="form-label">Message</label>
+                    <textarea class="form-control notification-textarea" id="message{{ patient.id }}" name="message" rows="4" required></textarea>
+                </div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-secondary cancel-notification-btn" data-patient-id="{{ patient.id }}">Cancel</button>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
