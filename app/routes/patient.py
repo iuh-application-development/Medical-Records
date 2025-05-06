@@ -73,3 +73,70 @@ def new_record():
         flash('Medical record has been added!', 'success')
         return redirect(url_for('patient.view_records'))
     return render_template('new_record.html', form=form)
+
+@bp.route('/view_charts')
+@login_required
+def view_charts():
+    if current_user.role != 'patient':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Get selected parameters from request
+    selected_parameters = request.args.getlist('parameters')
+    all_parameters = ['hgb', 'rbc', 'wbc', 'plt', 'hct', 'glucose', 'creatinine', 'alt', 'cholesterol', 'crp']
+    
+    # If no parameters selected, show all
+    if not selected_parameters:
+        selected_parameters = all_parameters
+    
+    # Get patient's records
+    records = MedicalRecord.query.filter_by(patient_id=current_user.id).order_by(MedicalRecord.date).all()
+    
+    # Convert records to pandas DataFrame for easier manipulation
+    data = []
+    for record in records:
+        record_data = {
+            'date': record.date.strftime('%Y-%m-%d'),
+            'hgb': float(record.hgb) if record.hgb else None,
+            'rbc': float(record.rbc) if record.rbc else None,
+            'wbc': float(record.wbc) if record.wbc else None,
+            'plt': float(record.plt) if record.plt else None,
+            'hct': float(record.hct) if record.hct else None,
+            'glucose': float(record.glucose) if record.glucose else None,
+            'creatinine': float(record.creatinine) if record.creatinine else None,
+            'alt': float(record.alt) if record.alt else None,
+            'cholesterol': float(record.cholesterol) if record.cholesterol else None,
+            'crp': float(record.crp) if record.crp else None
+        }
+        data.append(record_data)
+    
+    # Create charts
+    charts = {}
+    if data:
+        df = pd.DataFrame(data)
+        
+        for param in selected_parameters:
+            if param in df.columns:
+                param_df = df[df[param].notnull()]
+                if not param_df.empty:
+                    fig = px.line(param_df, x='date', y=param, title=f'{param.upper()} Over Time')
+                    fig.update_layout(
+                        xaxis_title='Date',
+                        yaxis_title=param.upper(),
+                        showlegend=True,
+                        height=400,
+                        margin=dict(l=50, r=50, t=50, b=50)
+                    )
+                    fig.update_traces(
+                        line=dict(width=2),
+                        mode='lines+markers',
+                        marker=dict(size=8)
+                    )
+                    fig_dict = fig.to_dict()
+                    for trace in fig_dict['data']:
+                        for key, value in trace.items():
+                            if hasattr(value, 'tolist'):
+                                trace[key] = value.tolist()
+                    charts[param] = json.dumps(fig_dict)
+    
+    return render_template('view_charts.html', charts=charts, parameters=selected_parameters)
