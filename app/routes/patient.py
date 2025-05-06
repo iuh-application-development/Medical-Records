@@ -140,3 +140,17 @@ def view_charts():
                     charts[param] = json.dumps(fig_dict)
     
     return render_template('view_charts.html', charts=charts, parameters=selected_parameters)
+
+@bp.route('/notifications')
+@login_required
+def notifications():
+    if current_user.role != 'patient':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Fetch all notifications for the current patient, ordered by date descending
+    # We'll show both read and unread notifications, but style them differently in the template
+    user_notifications = Notification.query.filter_by(patient_id=current_user.id)\
+                                      .order_by(Notification.date.desc()).all()
+                                        
+    return render_template('notifications.html', notifications=user_notifications)
