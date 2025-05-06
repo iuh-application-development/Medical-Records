@@ -154,3 +154,56 @@ def notifications():
                                       .order_by(Notification.date.desc()).all()
                                         
     return render_template('notifications.html', notifications=user_notifications)
+
+# Add a route to mark a notification as read (Example)
+@bp.route('/notifications/mark_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_as_read(notification_id):
+    if current_user.role != 'patient':
+        return jsonify({'error': 'Access denied'}), 403
+        
+    notification = Notification.query.get_or_404(notification_id)
+    
+    # Ensure the notification belongs to the current user
+    if notification.patient_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    notification.read = True
+    try:
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error marking notification as read: {e}")
+        return jsonify({'error': 'Could not update notification status'}), 500
+
+@bp.route('/notifications/delete/<int:notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    if current_user.role != 'patient':
+        return jsonify({'error': 'Access denied'}), 403
+        
+    notification = Notification.query.get_or_404(notification_id)
+    
+    # Ensure the notification belongs to the current user
+    if notification.patient_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    try:
+        db.session.delete(notification)
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting notification: {e}")
+        return jsonify({'error': 'Could not delete notification'}), 500
+
+@bp.route('/api/unread-notifications-count')
+@login_required
+def unread_notifications_count():
+    """API endpoint để trả về số lượng thông báo chưa đọc"""
+    if current_user.role != 'patient':
+        return jsonify({'count': 0})
+    
+    count = Notification.query.filter_by(patient_id=current_user.id, read=False).count()
+    return jsonify({'count': count})
