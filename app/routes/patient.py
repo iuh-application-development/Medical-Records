@@ -207,3 +207,15 @@ def unread_notifications_count():
     
     count = Notification.query.filter_by(patient_id=current_user.id, read=False).count()
     return jsonify({'count': count})
+
+@bp.route('/view_doctors')
+@login_required
+def view_doctors():
+    """Route để bệnh nhân xem danh sách các bác sĩ"""
+    if current_user.role != 'patient':
+        flash('Access denied. Patients only.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Lấy danh sách tất cả bác sĩ
+    doctors = User.query.filter_by(role='doctor').all()
+    return render_template('view_doctors.html', doctors=doctors)
