@@ -683,6 +683,10 @@
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if current_user.avatar %}
                                 <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" class="avatar-small me-2" alt="Avatar">
+                                {% else %}
+                                <div class="avatar-small me-2 d-inline-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #3498db, #2c3e50);">
+                                    <span class="text-white fw-bold">{{ current_user.username[0].upper() }}</span>
+                                </div>
                                 {% endif %}
                                 {{ current_user.username }}
                             </a>
