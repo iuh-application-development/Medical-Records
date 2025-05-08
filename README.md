@@ -67,7 +67,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 ---
 
 ## **4. Cấu Trúc Cơ Sở Dữ Liệu**
-
+![Database Structure](static/images/database.png)
 ### **4.1. Bảng Người Dùng**
 
 | Trường            | Kiểu     | Mô tả                                               |
