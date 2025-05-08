@@ -74,6 +74,15 @@ def new_record():
         return redirect(url_for('patient.view_records'))
     return render_template('new_record.html', form=form)
 
+@bp.route('/view_records')
+@login_required
+def view_records():
+    if current_user.role != 'patient':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('index'))
+    records = MedicalRecord.query.filter_by(patient_id=current_user.id).order_by(MedicalRecord.date.desc()).all()
+    return render_template('view_records.html', records=records, patient=current_user, patient_id=current_user.id)
+
 @bp.route('/view_charts')
 @login_required
 def view_charts():
