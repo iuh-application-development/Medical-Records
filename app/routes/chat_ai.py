@@ -12,6 +12,42 @@ bp = Blueprint('chat_ai', __name__)
 API_KEY = "AIzaSyAOBTEy3kA3ZITeOkEZHAUQgL_ab91pMrA"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
+def get_user_medical_records(user_id):
+    """Lấy tất cả thông tin bệnh án của người dùng"""
+    try:
+        from app.models.user import User
+        user = User.query.get(user_id)
+        if not user or user.role != 'patient':
+            return None
+            
+        all_records = MedicalRecord.query.filter_by(patient_id=user_id)\
+            .order_by(MedicalRecord.date.desc())\
+            .all()
+            
+        if not all_records:
+            return None
+            
+        records_data = []
+        for record in all_records:
+            record_info = {
+                "date": record.date.strftime("%Y-%m-%d"),
+                "hgb": record.hgb,
+                "rbc": record.rbc,
+                "wbc": record.wbc,
+                "plt": record.plt,
+                "hct": record.hct,
+                "glucose": record.glucose,
+                "creatinine": record.creatinine,
+                "alt": record.alt,
+                "cholesterol": record.cholesterol,
+                "crp": record.crp
+            }
+            records_data.append(record_info)
+            
+        return records_data
+    except Exception as e:
+        print(f"Lỗi khi lấy thông tin bệnh án: {e}")
+        return None
 
 def chat_with_gemini(user_input, user_id=None, user_name=None):
     headers = {
@@ -88,4 +124,3 @@ def chat_with_gemini(user_input, user_id=None, user_name=None):
             return f"Lỗi {response.status_code}: {response.text}"
     except Exception as e:
         return f"Lỗi: {str(e)}"
-
