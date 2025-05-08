@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    {% set unread_count = 0 %}
+    {% for notification in notifications %}
+        {% if not notification.read %}
+            {% set unread_count = unread_count + 1 %}
+        {% endif %}
+    {% endfor %}
+    
+    <h1 class="mb-4">
+        <i class="fas fa-bell me-2"></i>Your Notifications
+        {% if unread_count > 0 %}
+        <span class="badge bg-danger notification-counter">{{ unread_count }}</span>
+        {% endif %}
+    </h1>
+
+    {% if notifications %}
+        <div class="list-group shadow-sm">
+            {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center notification-item {% if notification.read %}read-notification{% else %}unread-notification{% endif %}" data-id="{{ notification.id }}">
+                    <div>
+                        <p class="mb-1">{{ notification.message }}</p>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">{{ notification.date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                            {% if notification.doctor_id %}
+                            <small class="text-primary ms-2">Doctor: <span class="fw-bold">{{ notification.doctor.username }}{% if notification.doctor.full_name %} ({{ notification.doctor.full_name }}){% endif %}</span></small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <form method="POST" action="{{ url_for('patient.mark_notification_as_read', notification_id=notification.id) }}" class="mark-read-form d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary me-2" title="Mark as read" {% if notification.read %}disabled{% endif %}>
+                                <i class="fas {% if notification.read %}fa-check-double{% else %}fa-check{% endif %}"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('patient.delete_notification', notification_id=notification.id) }}" class="delete-form d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete notification">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            You have no notifications.
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.notification-item {
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+.unread-notification {
+    border-left: 5px solid #dc3545; /* Red border for unread */
+    background-color: rgba(255, 235, 235, 0.3);
+}
+.read-notification {
+    border-left: 5px solid #0d6efd; /* Blue border for read */
+    background-color: rgba(235, 245, 255, 0.3);
+}
+.mark-read-btn, .delete-btn {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+.notification-item:hover .mark-read-btn,
+.notification-item:hover .delete-btn {
+    opacity: 1;
+}
+.notification-counter {
+    font-size: 0.75rem;
+    vertical-align: top;
+    margin-left: 5px;
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Hàm cập nhật bộ đếm thông báo
+function updateNotificationCounter() {
+    // Đếm số lượng thông báo chưa đọc
+    const unreadCount = document.querySelectorAll('.unread-notification').length;
+    
+    // Cập nhật bộ đếm trong trang hiện tại
+    const counter = document.querySelector('.notification-counter');
+    if (counter) {
+        if (unreadCount > 0) {
+            counter.textContent = unreadCount;
+            counter.style.display = '';
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+    
+    // Cập nhật bộ đếm trong thanh điều hướng
+    // Gọi cùng hàm mà base.html sử dụng
+    if (typeof updateNavbarNotificationCount === 'function') {
+        updateNavbarNotificationCount();
+    }
+}
+
+// Xử lý form submission bằng AJAX
+document.querySelectorAll('.mark-read-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const notificationItem = this.closest('.notification-item');
+        const submitButton = this.querySelector('button');
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            if (data.success) {
+                notificationItem.classList.remove('unread-notification');
+                notificationItem.classList.add('read-notification');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-check-double"></i>';
+                
+                // Cập nhật bộ đếm thông báo
+                updateNotificationCounter();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+
+document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Hỏi xác nhận xóa trong JavaScript
+        if (!confirm('Bạn có chắc chắn muốn xóa thông báo này không?')) {
+            return;
+        }
+        
+        const notificationItem = this.closest('.notification-item');
+        const formData = new FormData(this);
+        const isUnread = notificationItem.classList.contains('unread-notification');
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            if (data.success) {
+                notificationItem.style.height = notificationItem.offsetHeight + 'px';
+                notificationItem.style.opacity = '0';
+                notificationItem.style.transition = 'all 0.5s ease';
+                notificationItem.style.overflow = 'hidden';
+                notificationItem.style.height = '0';
+                
+                setTimeout(() => {
+                    notificationItem.remove();
+                    
+                    // Cập nhật bộ đếm nếu là thông báo chưa đọc
+                    if (isUnread) {
+                        updateNotificationCounter();
+                    }
+                    
+                    // Nếu không còn thông báo, hiển thị thông báo "không có thông báo"
+                    if (document.querySelectorAll('.notification-item').length === 0) {
+                        const container = document.querySelector('.container');
+                        const listGroup = document.querySelector('.list-group');
+                        if (container && listGroup) {
+                            listGroup.remove();
+                            const noNotificationsAlert = document.createElement('div');
+                            noNotificationsAlert.className = 'alert alert-info';
+                            noNotificationsAlert.setAttribute('role', 'alert');
+                            noNotificationsAlert.textContent = 'You have no notifications.';
+                            container.appendChild(noNotificationsAlert);
+                        }
+                    }
+                }, 500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+
+// Khởi tạo bộ đếm khi trang tải
+document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationCounter();
+});
+</script>
+{% endblock %}

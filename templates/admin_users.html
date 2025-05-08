@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 p-0">
+    <div class="card shadow-lg border-0 rounded-0 admin-card h-100">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary mb-0">User Management</h2>
+                <div class="search-box">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="userSearch" placeholder="Search users...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Contact Info</th>
+                            <th>Current Role</th>
+                            <th>Change Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {% if user.avatar %}
+                                        <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Avatar">
+                                        {% else %}
+                                        <span class="avatar-initial">{{ user.username[0].upper() }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{ user.username }}</h6>
+                                        <small class="text-muted">{{ user.full_name or 'Not set' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fas fa-envelope text-muted me-2"></i>
+                                        <span>{{ user.email }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-phone text-muted me-2"></i>
+                                        <span>{{ user.phone or 'Not set' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ user.role }}
+                            </td>
+                            <td>
+                                <form action="{{ url_for('admin.update_role', user_id=user.id) }}" method="post" class="d-flex align-items-center">
+                                    {{ role_form.csrf_token }}
+                                    {{ role_form.current_role(value=user.role, class='form-select form-select-sm w-auto me-2') }}
+                                    {{ role_form.role(class='form-select form-select-sm w-auto me-2') }}
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#resetPasswordModal{{ user.id }}">
+                                    <i class="fas fa-key"></i> Reset Password
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modals -->
+{% for user in users %}
+<div class="modal fade" id="resetPasswordModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Password for {{ user.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.reset_password', user_id=user.id) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <div class="input-group">
+                            <input type="password" name="new_password" class="form-control password-input" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <input type="password" name="confirm_password" class="form-control confirm-password-input" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            <div class="password-match-indicator ms-2 d-flex align-items-center">
+                                <i class="fas fa-check text-success d-none"></i>
+                                <i class="fas fa-times text-danger d-none"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+.container-fluid {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.admin-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    animation: cardAppear 0.6s ease-out;
+    margin: 20px 0;
+}
+
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-box .input-group {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.search-box .input-group-text {
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initial {
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-select {
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 0.25rem 2rem 0.25rem 0.75rem;
+}
+
+.form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: none;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.modal.fade.show {
+    display: flex !important;
+    pointer-events: auto;
+}
+
+.modal-dialog {
+    margin: 1.75rem auto;
+    position: relative;
+    pointer-events: auto;
+    max-width: 500px;
+    width: 100%;
+    z-index: 10000;
+}
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    z-index: 10001;
+    pointer-events: auto;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+    background: white;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background: #f8f9fa;
+}
+
+.input-group .form-control {
+    border-right: 0;
+}
+
+.input-group .btn {
+    border-left: 0;
+}
+
+.password-match-indicator {
+    font-size: 1.2rem;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-match-indicator i {
+    transition: all 0.2s ease;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.modal-backdrop {
+    display: none !important;
+}
+
+.modal-open {
+    overflow: hidden;
+    padding-right: 0 !important;
+}
+</style>
+
+<script>
+// Search functionality
+document.getElementById('userSearch').addEventListener('input', function() {
+    var searchText = this.value.toLowerCase();
+    var rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(function(row) {
+        var username = row.querySelector('h6').textContent.toLowerCase();
+        var fullName = row.querySelector('small').textContent.toLowerCase();
+        var email = row.querySelector('.fa-envelope').nextElementSibling.textContent.toLowerCase();
+        
+        if (username.includes(searchText) || fullName.includes(searchText) || email.includes(searchText)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Password visibility toggle
+document.querySelectorAll('.toggle-password').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var input = this.parentElement.querySelector('input');
+        var icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    });
+});
+
+// Password comparison validation
+document.querySelectorAll('.modal').forEach(function(modal) {
+    const passwordInput = modal.querySelector('.password-input');
+    const confirmInput = modal.querySelector('.confirm-password-input');
+    const checkIcon = modal.querySelector('.password-match-indicator .fa-check');
+    const timesIcon = modal.querySelector('.password-match-indicator .fa-times');
+
+    function validatePasswords() {
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        
+        if (confirm.length === 0) {
+            checkIcon.classList.add('d-none');
+            timesIcon.classList.add('d-none');
+        } else if (password === confirm) {
+            checkIcon.classList.remove('d-none');
+            timesIcon.classList.add('d-none');
+        } else {
+            checkIcon.classList.add('d-none');
+            timesIcon.classList.remove('d-none');
+        }
+    }
+
+    passwordInput.addEventListener('input', validatePasswords);
+    confirmInput.addEventListener('input', validatePasswords);
+
+    // Clear validation when modal is hidden
+    modal.addEventListener('hidden.bs.modal', function() {
+        passwordInput.value = '';
+        confirmInput.value = '';
+        checkIcon.classList.add('d-none');
+        timesIcon.classList.add('d-none');
+    });
+});
+</script>
+{% endblock %}
