@@ -124,3 +124,46 @@ def chat_with_gemini(user_input, user_id=None, user_name=None):
             return f"Lỗi {response.status_code}: {response.text}"
     except Exception as e:
         return f"Lỗi: {str(e)}"
+
+@bp.route('/ask', methods=['POST'])
+@csrf.exempt
+def ask_ai():
+    try:
+        if not request.is_json:
+            return jsonify({'error': 'Yêu cầu phải ở định dạng JSON'}), 400
+            
+        data = request.get_json()
+        if not data or 'message' not in data:
+            return jsonify({'error': 'Vui lòng cung cấp tin nhắn'}), 400
+        
+        user_message = data['message']
+        if not isinstance(user_message, str) or not user_message.strip():
+            return jsonify({'error': 'Tin nhắn không hợp lệ'}), 400
+        
+        user_id = None
+        user_name = None
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            user_id = current_user.id
+            user_name = current_user.username
+            
+        ai_response = chat_with_gemini(user_message, user_id, user_name)
+        
+        if user_id:
+            try:
+                chat_history = ChatHistory(
+                    user_id=user_id,
+                    message=user_message,
+                    response=ai_response,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(chat_history)
+                db.session.commit()
+            except Exception as e:
+                print(f"Lỗi khi lưu lịch sử chat: {e}")
+                db.session.rollback()
+        
+        return jsonify({
+            'response': ai_response
+        })
+    except Exception as e:
+        return jsonify({'error': f'Lỗi server: {str(e)}'}), 500
