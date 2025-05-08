@@ -1,12 +1,17 @@
+<div align="center">
+
 # **Medical Records**
 ![Medical Records Logo](static/images/img.jpg)
+
+</div>
+
 ## **Thành viên nhóm**
 - **Thành viên 1:** Trương Công Đạt - 22685561
 - **Thành viên 2:** Nguyễn Gia Lâm - 22685611
 - **Thành viên 3:** Phan Tấn Tài - 22684181
 ## **1. Tổng Quan**
 
-**Medical Records** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại các phiếu xét nghiệm máu . Hệ thống cho phép:
+**Medical Records** là một nền tảng web toàn diện giúp bệnh nhân, bác sĩ quản lý các bảng ghi lại một số chỉ sô quan trọng có trong các phiếu xét nghiệm máu để tiện theo dõi. Hệ thống cho phép:
 
 * Bệnh nhân **xem và thêm kết quả xét nghiệm máu** trong môi trường an toàn
 * Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
