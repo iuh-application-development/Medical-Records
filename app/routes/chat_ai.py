@@ -167,3 +167,24 @@ def ask_ai():
         })
     except Exception as e:
         return jsonify({'error': f'Lỗi server: {str(e)}'}), 500
+
+@bp.route('/history', methods=['GET'])
+@login_required
+def get_user_chat_history():
+    try:
+        history = ChatHistory.query.filter_by(user_id=current_user.id)\
+            .order_by(ChatHistory.timestamp.desc())\
+            .all()
+            
+        return jsonify({
+            'history': [chat.to_dict() for chat in history]
+        })
+    except Exception as e:
+        return jsonify({'error': f'Lỗi khi lấy lịch sử chat: {str(e)}'}), 500
+
+@bp.route('/test', methods=['GET'])
+def test_api():
+    return jsonify({
+        'status': 'success',
+        'message': 'Chat AI API đang hoạt động bình thường'
+    }) 
