@@ -1,4 +1,5 @@
 # **Medical Records**
+![Medical Records Logo](static/images/img.jpg)
 ## **Thành viên nhóm**
 - **Thành viên 1:** Trương Công Đạt - 22685561
 - **Thành viên 2:** Nguyễn Gia Lâm - 22685611
@@ -11,6 +12,7 @@
 * Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
 * Quản trị viên **quản lý tài khoản người dùng** và quyền hạn hệ thống
 
+Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tếtế
 Nền tảng có giao diện thích ứng với khả năng trực quan hóa dữ liệu để theo dõi các chỉ số sức khỏe theo thời gian.
 
 ## **2. Công Nghệ Sử Dụng**
@@ -20,6 +22,7 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 * **Cơ sở dữ liệu**: SQLite
 * **Xác thực**: Flask-Login
 * **Môi trường ảo**: Python venv
+
 
 ---
 
@@ -39,11 +42,12 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 * Nhận và quản lý thông báo từ bác sĩ
 * Có đánh dấu thông báo đã đọc hay thông báo số lượng thông báo chưa đọc
 
+✅ **Tìm kiếm các thông tin của bác sĩ sử dụng web để có thể liên lạc nếu cần**.
 ### **3.2. Tính Năng Cho Bác Sĩ**
 
 ✅ **Quản lý bệnh nhân**:
-* Tìm kiếm bệnh nhân trong hệ thống
-* Xem các bản ghi của bệnh nhân
+* Tìm kiếm bệnh nhân trong hệ thống và thông tin của bệnh nhân để tiện liên lạc.
+* Xem các bản ghi của bệnh nhân : Xem dưới dạng bảng ghi thông thường hay dạng đồ thị
 * Tải xuống dữ liệu bệnh nhân dưới dạng CSV
 
 ✅ **Giao tiếp**:
@@ -61,46 +65,57 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 ### **4.1. Bảng Người Dùng**
 
-| Trường | Kiểu | Mô tả |
-|-------|------|-------------|
-| id | Integer | Khóa chính |
-| username | String | Tên đăng nhập duy nhất |
-| email | String | Địa chỉ email người dùng |
-| password_hash | String | Mật khẩu đã mã hóa |
-| phone | String | Số điện thoại liên hệ |
-| full_name | String | Họ tên đầy đủ |
-| avatar | String | Đường dẫn ảnh đại diện |
-| role | String | Vai trò người dùng (bệnh nhân/bác sĩ/quản trị viên) |
-| reset_code | String | Mã xác minh đặt lại mật khẩu |
-| reset_code_expiry | DateTime | Thời gian hết hạn mã đặt lại |
+| Trường            | Kiểu     | Mô tả                                               |
+| ----------------- | -------- | --------------------------------------------------- |
+| id                | Integer  | Khóa chính                                          |
+| username          | String   | Tên đăng nhập duy nhất                              |
+| email             | String   | Địa chỉ email người dùng                            |
+| password_hash     | String   | Mật khẩu đã mã hóa                                  |
+| phone             | String   | Số điện thoại liên hệ                               |
+| full_name         | String   | Họ tên đầy đủ                                       |
+| avatar            | String   | Đường dẫn ảnh đại diện                              |
+| role              | String   | Vai trò người dùng (bệnh nhân/bác sĩ/quản trị viên) |
+| reset_code        | String   | Mã xác minh đặt lại mật khẩu                        |
+| reset_code_expiry | DateTime | Thời gian hết hạn mã đặt lại                        |
 
 ### **4.2. Bảng Hồ Sơ Y Tế**
 
-| Trường | Kiểu | Mô tả |
-|-------|------|-------------|
-| id | Integer | Khóa chính |
-| patient_id | Integer | Khóa ngoại đến Người dùng |
-| date | DateTime | Ngày ghi nhận |
-| hgb | Float | Mức hemoglobin |
-| rbc | Float | Số lượng hồng cầu |
-| wbc | Float | Số lượng bạch cầu |
-| plt | Float | Số lượng tiểu cầu |
-| hct | Float | Hematocrit |
-| glucose | Float | Đường huyết |
-| creatinine | Float | Mức creatinine |
-| alt | Float | Alanine transaminase |
-| cholesterol | Float | Mức cholesterol |
-| crp | Float | Protein C-phản ứng |
+| Trường      | Kiểu     | Mô tả                     |
+| ----------- | -------- | ------------------------- |
+| id          | Integer  | Khóa chính                |
+| patient_id  | Integer  | Khóa ngoại đến Người dùng |
+| date        | DateTime | Ngày ghi nhận             |
+| hgb         | Float    | Mức hemoglobin            |
+| rbc         | Float    | Số lượng hồng cầu         |
+| wbc         | Float    | Số lượng bạch cầu         |
+| plt         | Float    | Số lượng tiểu cầu         |
+| hct         | Float    | Hematocrit                |
+| glucose     | Float    | Đường huyết               |
+| creatinine  | Float    | Mức creatinine            |
+| alt         | Float    | Alanine transaminase      |
+| cholesterol | Float    | Mức cholesterol           |
+| crp         | Float    | Protein C-phản ứng        |
 
 ### **4.3. Bảng Thông Báo**
 
-| Trường | Kiểu | Mô tả |
-|-------|------|-------------|
-| id | Integer | Khóa chính |
-| patient_id | Integer | Khóa ngoại đến Người dùng |
-| message | Text | Nội dung thông báo |
-| date | DateTime | Ngày thông báo |
-| read | Boolean | Trạng thái đã đọc |
+| Trường     | Kiểu     | Mô tả                     |
+| ---------- | -------- | ------------------------- |
+| id         | Integer  | Khóa chính                |
+| patient_id | Integer  | Khóa ngoại đến Người dùng |
+| message    | Text     | Nội dung thông báo        |
+| date       | DateTime | Ngày thông báo            |
+| read       | Boolean  | Trạng thái đã đọc         |
+
+### **4.4. Bảng Lịch Sử Trò Chuyện Với AI**
+
+| Trường      | Kiểu     | Mô tả                  |
+| ----------- | -------- | ---------------------- |
+| id          | Integer  | Khóa chính             |
+| sender_id   | Integer  | ID người gửi           |
+| receiver_id | Integer  | ID người nhận          |
+| message     | Text     | Nội dung tin nhắn      |
+| is_read     | Boolean  | Trạng thái đã đọc      |
+| created_at  | DateTime | Thời gian gửi tin nhắn |
 
 ---
 
@@ -115,6 +130,8 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 3️⃣ Xem dữ liệu lịch sử và biểu đồ trực quan
 
 4️⃣ Nhận thông báo từ bác sĩ
+
+5️⃣ Tìm kiếm thông tin của bác sĩ
 
 ### **5.2. Quy trình đối với người dùng có vai trò bác sĩ**
 
@@ -141,29 +158,51 @@ Nền tảng có giao diện thích ứng với khả năng trực quan hóa d�
 
 ```
 medical-records/
-├── app.py                  # Tệp ứng dụng chính
-├── forms.py               # Định nghĩa biểu mẫu
-├── requirements.txt       # Các gói phụ thuộc
-├── instance/              # Tệp cơ sở dữ liệu
-│   └── medical_records.db # Cơ sở dữ liệu SQLite
+├── app/                    # Thư mục chính của ứng dụng
+│   ├── __init__.py        # Khởi tạo ứng dụng Flask
+│   ├── config.py          # Cấu hình ứng dụng
+│   ├── models/            # Các model cơ sở dữ liệu
+│   │   ├── user.py        # Model người dùng
+│   │   ├── medical_record.py # Model hồ sơ y tế
+│   │   └── chat_history.py # Model lịch sử chat
+│   ├── forms/             # Các form xử lý dữ liệu
+│   │   ├── __init__.py    # Khởi tạo forms
+│   │   ├── auth_forms.py  # Form xác thực
+│   │   ├── admin_forms.py # Form quản trị
+│   │   ├── doctor_forms.py # Form bác sĩ
+│   │   └── patient_forms.py # Form bệnh nhân
+│   └── routes/            # Các route xử lý request
+│       ├── auth.py        # Route xác thực
+│       ├── admin.py       # Route quản trị
+│       ├── doctor.py      # Route bác sĩ
+│       ├── patient.py     # Route bệnh nhân
+│       └── chat_ai.py     # Route chat AI
 ├── static/                # Tài nguyên tĩnh
-│   ├── images/            # Tệp hình ảnh
-│   └── uploads/           # Tải lên của người dùng
-├── templates/             # Mẫu HTML
+│   ├── images/           # Hình ảnh
+│   └── uploads/          # Thư mục lưu file upload
+├── templates/             # Template HTML
 │   ├── admin_users.html   # Quản lý người dùng của quản trị viên
-│   ├── base.html          # Mẫu cơ sở
-│   ├── home.html          # Trang chủ
-│   ├── login.html         # Trang đăng nhập
-│   ├── new_record.html    # Thêm bản ghi mới
+│   ├── base.html         # Template cơ sở
+│   ├── doctor_dashboard.html # Trang chủ của bác sĩ
+│   ├── home.html         # Trang chủ
+│   ├── index.html        # Trang chính
+│   ├── login.html        # Trang đăng nhập
+│   ├── new_record.html   # Thêm bản ghi mới
 │   ├── notifications.html # Thông báo người dùng
-│   ├── patient_records.html # Xem hồ sơ bệnh nhân
-│   ├── profile.html       # Hồ sơ người dùng
-│   ├── register.html      # Trang đăng ký
+│   ├── profile.html      # Hồ sơ người dùng
+│   ├── register.html     # Trang đăng ký
+│   ├── reset_password.html # Đặt lại mật khẩu
+│   ├── reset_password_request.html # Yêu cầu đặt lại mật khẩu
 │   ├── search_patient.html # Tìm kiếm bệnh nhân
-│   └── view_charts.html   # Trực quan hóa dữ liệu
-└── venv/                  # Môi trường ảo
+│   ├── view_charts.html  # Trực quan hóa dữ liệu
+│   ├── view_doctors.html # Xem danh sách bác sĩ
+│   └── view_records.html # Xem hồ sơ bệnh nhân
+├── instance/             # Thư mục chứa dữ liệu cục bộ
+│   └── medical_records.db # Database SQLite
+├── app.py                # File chạy ứng dụng
+├── requirements.txt      # Các package cần thiết
+└── .gitignore           # File cấu hình Git
 ```
-
 ## **7. Cài Đặt và Thiết Lập**
 
 1. Clone repo:
@@ -196,4 +235,5 @@ python app.py
 ```
 
 ---
+
 
