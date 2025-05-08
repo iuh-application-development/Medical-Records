@@ -22,6 +22,12 @@ def create_app():
     # Load configuration from Config class
     app.config.from_object(Config)
 
+    # Ensure instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+
     # Initialize extensions with app
     db.init_app(app)
     csrf.init_app(app)
