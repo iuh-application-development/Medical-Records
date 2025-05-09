@@ -17,7 +17,7 @@
 * Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
 * Quản trị viên **quản lý tài khoản người dùng** và quyền hạn hệ thống
 
-Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tếtế
+Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tế
 Nền tảng có giao diện thích ứng với khả năng trực quan hóa dữ liệu để theo dõi các chỉ số sức khỏe theo thời gian.
 
 ## **2. Công Nghệ Sử Dụng**
