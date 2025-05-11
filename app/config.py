@@ -17,9 +17,9 @@ class Config:
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
-    MAIL_USERNAME = 'lieutien124@gmail.com'
-    MAIL_PASSWORD = 'tibkmaofxfcuuwbw'
-    MAIL_DEFAULT_SENDER = 'lieutien124@gmail.com'
+    MAIL_USERNAME = 'medicalrecords.sys@gmail.com'
+    MAIL_PASSWORD = 'xcltvkvwnezryvdb'
+    MAIL_DEFAULT_SENDER = 'medicalrecords.sys@gmail.com'
     MAIL_MAX_EMAILS = None
     MAIL_ASCII_ATTACHMENTS = False
     
