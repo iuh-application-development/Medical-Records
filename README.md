@@ -17,7 +17,7 @@
 * Bác sĩ **tìm kiếm, xem xét các bản ghi** và gửi thông báo đến bệnh nhân
 * Quản trị viên **quản lý tài khoản người dùng** và quyền hạn hệ thống
 
-Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tế
+Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tếtế
 Nền tảng có giao diện thích ứng với khả năng trực quan hóa dữ liệu để theo dõi các chỉ số sức khỏe theo thời gian.
 
 ## **2. Công Nghệ Sử Dụng**
@@ -188,7 +188,58 @@ medical-records/
 ├── templates/             # Template HTML
 │   ├── admin_users.html   # Quản lý người dùng của quản trị viên
 │   ├── base.html         # Template cơ sở
-│   ├── doctor_dashboard.html # TrRecord**](https://medical-records-pzlf.onrender.com/)
+│   ├── doctor_dashboard.html # Trang chủ của bác sĩ
+│   ├── home.html         # Trang chủ
+│   ├── index.html        # Trang chính
+│   ├── login.html        # Trang đăng nhập
+│   ├── new_record.html   # Thêm bản ghi mới
+│   ├── notifications.html # Thông báo người dùng
+│   ├── profile.html      # Hồ sơ người dùng
+│   ├── register.html     # Trang đăng ký
+│   ├── reset_password.html # Đặt lại mật khẩu
+│   ├── reset_password_request.html # Yêu cầu đặt lại mật khẩu
+│   ├── search_patient.html # Tìm kiếm bệnh nhân
+│   ├── view_charts.html  # Trực quan hóa dữ liệu
+│   ├── view_doctors.html # Xem danh sách bác sĩ
+│   └── view_records.html # Xem hồ sơ bệnh nhân
+├── instance/             # Thư mục chứa dữ liệu cục bộ
+│   └── medical_records.db # Database SQLite
+├── app.py                # File chạy ứng dụng
+├── requirements.txt      # Các package cần thiết
+└── .gitignore           # File cấu hình Git
+```
+## **7. Cài Đặt và Thiết Lập**
+
+1. Clone repo:
+```
+git clone https://github.com/iuh-application-development/Medical-Records.git
+```
+```
+cd .\Medical-Records\
+```
+2. Tạo môi trường ảo:
+```
+python -m venv venv
+```
+3. Kích hoạt môi trường ảo:
+- Đối với Windows:
+```
+venv\Scripts\activate
+```
+- Đối với Linux/Mac:
+```
+source venv/bin/activate
+```
+4. Cài đặt các gói phụ thuộc:
+```
+pip install -r requirements.txt
+```
+5. Chạy ứng dụng:
+```
+python app.py
+```
+## Link dự án đã triển khai bằng nền tảng Render : [**Medical Record**](https://medical-records-pzlf.onrender.com/)
+
 ---
 
 
