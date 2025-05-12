@@ -236,7 +236,7 @@ pip install -r requirements.txt
 ```
 5. Chạy ứng dụng:
 ```
-python app.py
+python run.py
 ```
 
 ---
