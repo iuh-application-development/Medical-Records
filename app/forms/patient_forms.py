@@ -23,3 +23,6 @@ class MedicalRecordForm(FlaskForm):
     cholesterol = StringField('Cholesterol', validators=[DataRequired()])
     crp = StringField('CRP', validators=[DataRequired()])
     submit = SubmitField('Save Record')
+
+class DeleteRecordForm(FlaskForm):
+    submit = SubmitField('Delete Record')
