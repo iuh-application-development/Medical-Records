@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.models.user import User
+from app.models.medical_record import MedicalRecord
 from app.forms.admin_forms import AdminUserManagementForm, AdminPasswordResetForm 
 from app import db, s
+import pandas as pd
+import io
 
 bp = Blueprint('admin', __name__)
 
@@ -108,3 +111,83 @@ def manage_user(user_id):
             return redirect(url_for('admin.users'))
     
     return render_template('manage_user.html', form=form, user=user)
+
+@bp.route('/users/export')
+@login_required
+def export_users():
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Lấy tất cả user
+    users = User.query.all()
+    
+    # Tạo DataFrame
+    data = []
+    for user in users:
+        data.append({
+            'ID': user.id,
+            'Username': user.username,
+            'Email': user.email,
+            'Phone': user.phone,
+            'Role': user.role,
+            'Created At': user.created_at
+        })
+    df = pd.DataFrame(data)
+    
+    # Tạo file Excel trong memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Users', index=False)
+    
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='users.xlsx'
+    )
+
+@bp.route('/records/export')
+@login_required
+def export_records():
+    if current_user.role != 'admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Lấy tất cả bản ghi y tế
+    records = MedicalRecord.query.all()
+    
+    # Tạo DataFrame
+    data = []
+    for record in records:
+        data.append({
+            'ID': record.id,
+            'Patient ID': record.patient_id,
+            'Date': record.date,
+            'HGB': record.hgb,
+            'RBC': record.rbc,
+            'WBC': record.wbc,
+            'PLT': record.plt,
+            'HCT': record.hct,
+            'Glucose': record.glucose,
+            'Creatinine': record.creatinine,
+            'ALT': record.alt,
+            'Cholesterol': record.cholesterol,
+            'CRP': record.crp,
+            'Created At': record.created_at
+        })
+    df = pd.DataFrame(data)
+    
+    # Tạo file Excel trong memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Medical Records', index=False)
+    
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='medical_records.xlsx'
+    )

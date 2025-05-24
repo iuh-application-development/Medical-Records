@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app.models.user import User
 from app.models.medical_record import MedicalRecord, Notification
-from app.forms.patient_forms import UpdateProfileForm, MedicalRecordForm, DeleteRecordForm
+from app.forms import UpdateProfileForm, MedicalRecordForm
 from app import db, s
 import os
 from werkzeug.utils import secure_filename
@@ -81,11 +81,7 @@ def view_records():
         flash('Access denied.', 'danger')
         return redirect(url_for('index'))
     records = MedicalRecord.query.filter_by(patient_id=current_user.id).order_by(MedicalRecord.date.desc()).all()
-
-    # Create a delete form instance for each record
-    delete_forms = {record.id: DeleteRecordForm() for record in records}
-
-    return render_template('view_records.html', records=records, patient=current_user, patient_id=current_user.id, delete_forms=delete_forms)
+    return render_template('view_records.html', records=records, patient=current_user, patient_id=current_user.id)
 
 @bp.route('/view_charts')
 @login_required
@@ -232,52 +228,3 @@ def view_doctors():
     # Lấy danh sách tất cả bác sĩ
     doctors = User.query.filter_by(role='doctor').all()
     return render_template('view_doctors.html', doctors=doctors)
-
-@bp.route('/edit_record/<int:record_id>', methods=['GET', 'POST'])
-@login_required
-def edit_record(record_id):
-    if current_user.role != 'patient':
-        flash('Access denied.', 'danger')
-        return redirect(url_for('index'))
-    
-    record = MedicalRecord.query.get_or_404(record_id)
-    if record.patient_id != current_user.id:
-        flash('Access denied.', 'danger')
-        return redirect(url_for('index'))
-    
-    form = MedicalRecordForm(obj=record) # Populate form with existing record data
-    if form.validate_on_submit():
-        form.populate_obj(record) # Update record object with form data
-        db.session.commit()
-        flash('Medical record has been updated!', 'success')
-        return redirect(url_for('patient.view_records'))
-    
-    return render_template('edit_record.html', form=form, record=record)
-
-@bp.route('/delete_record/<int:record_id>', methods=['POST'])
-@login_required
-def delete_record(record_id):
-    form = DeleteRecordForm()
-    if form.validate_on_submit():
-        if current_user.role != 'patient':
-            flash('Access denied.', 'danger')
-            return redirect(url_for('index'))
-
-        record = MedicalRecord.query.get_or_404(record_id)
-        if record.patient_id != current_user.id:
-            flash('Access denied.', 'danger')
-            return redirect(url_for('index'))
-
-        try:
-            db.session.delete(record)
-            db.session.commit()
-            flash('Medical record has been deleted!', 'success')
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error deleting record: {e}', 'danger')
-
-        return redirect(url_for('patient.view_records'))
-    else:
-        # If form validation fails (e.g., CSRF error)
-        flash('Invalid request or CSRF token missing.', 'danger')
-        return redirect(url_for('patient.view_records'))

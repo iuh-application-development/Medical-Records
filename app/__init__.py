@@ -14,13 +14,13 @@ mail = Mail()
 csrf = CSRFProtect()
 s = None
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__, 
                 template_folder='../templates',  # Chỉ định đường dẫn đến thư mục templates
                 static_folder='../static')       # Chỉ định đường dẫn đến thư mục static
     
     # Load configuration from Config class
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
 
     # Ensure instance folder exists
     try:
