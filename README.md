@@ -236,8 +236,9 @@ pip install -r requirements.txt
 ```
 5. Chạy ứng dụng:
 ```
-python app.py
+python run.py
 ```
+## Link dự án đã triển khai bằng nền tảng Render : [**Medical Record**](https://medical-records-pzlf.onrender.com/)
 
 ---
 
