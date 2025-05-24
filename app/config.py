@@ -1,10 +1,11 @@
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'hkhsl-hehehe-bshsbdfbshsbdf')
    
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
@@ -12,6 +13,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     UPLOAD_FOLDER = 'static/uploads'
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  
+    PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
@@ -26,3 +29,8 @@ class Config:
     @staticmethod
     def init_app(app):
         pass
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    WTF_CSRF_ENABLED = False
