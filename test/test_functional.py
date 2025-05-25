@@ -1,11 +1,15 @@
 import unittest
+import pytest
 from app import create_app, db
 from app.models.user import User
 from app.models.medical_record import MedicalRecord, Notification
 from app.config import TestingConfig
 from flask import current_app
 from datetime import datetime
+from sqlalchemy.exc import LegacyAPIWarning
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+@pytest.mark.filterwarnings("ignore::sqlalchemy.exc.LegacyAPIWarning")
 class FunctionalTest(unittest.TestCase):
     def setUp(self):
         self.app = create_app(TestingConfig)
@@ -231,7 +235,7 @@ class FunctionalTest(unittest.TestCase):
         # Test đánh dấu thông báo đã đọc
         response = self.client.post(f'/patient/notifications/mark_read/{notification.id}')
         self.assertEqual(response.status_code, 200)
-        updated_notification = Notification.query.get(notification.id)
+        updated_notification = db.session.get(Notification, notification.id)
         self.assertTrue(updated_notification.read)
 
     # Test cases cho role doctor
@@ -480,7 +484,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Nếu role chưa đổi, cập nhật trực tiếp để test không fail dây chuyền
-        updated_user = User.query.get(user.id)
+        updated_user = db.session.get(User, user.id)
         if updated_user.role != 'doctor':
             updated_user.role = 'doctor'
             db.session.commit()
@@ -521,7 +525,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Nếu role chưa đổi, cập nhật trực tiếp để test không fail dây chuyền
-        updated_user = User.query.get(user.id)
+        updated_user = db.session.get(User, user.id)
         if updated_user.role != 'doctor':
             updated_user.role = 'doctor'
             db.session.commit()
@@ -562,7 +566,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Nếu role chưa đổi, cập nhật trực tiếp để test không fail dây chuyền
-        updated_user = User.query.get(user.id)
+        updated_user = db.session.get(User, user.id)
         if updated_user.role != 'patient':
             updated_user.role = 'patient'
             db.session.commit()
