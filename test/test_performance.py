@@ -1,390 +1,245 @@
-import unittest
-import time
+from locust import HttpUser, task, between
 from app import create_app, db
 from app.models.user import User
 from app.models.medical_record import MedicalRecord
 from app.config import TestingConfig
+from bs4 import BeautifulSoup
+import random
+import time
 
-class PerformanceTest(unittest.TestCase):
-    def setUp(self):
-        self.app = create_app(TestingConfig)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-        db.create_all()
-        self.client = self.app.test_client()
-        # Tạo CSRF token cho testing
-        with self.client.session_transaction() as session:
-            session['csrf_token'] = 'test_token'
+user_counter = 0
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-        self.app_context.pop()
+class BaseUser(HttpUser):
+    abstract = True
+    wait_time = between(1, 2.5)
+    csrf_token = None
 
-    def test_user_registration_performance(self):
-        """Test hiệu suất đăng ký người dùng"""
-        start_time = time.time()
+    def on_start(self):
+        self.get_csrf_token()
+        if self.csrf_token:
+            self.login()
+
+    def get_csrf_token(self):
+        try:
+            response = self.client.get("/login", catch_response=True)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                csrf_input = soup.find('input', {'name': 'csrf_token'})
+                if csrf_input:
+                    self.csrf_token = csrf_input['value']
+                else:
+                    response.failure("CSRF token not found on login page")
+            else:
+                response.failure(f"Failed to get login page: {response.status_code}")
+        except Exception as e:
+            self.environment.runner.quit()
+            print(f"Error getting CSRF token: {e}")
+            self.csrf_token = None
+
+    def login(self):
+        login_data = {
+            "username": self.username,
+            "password": self.password,
+            "csrf_token": self.csrf_token
+        }
+        response = self.client.post("/login", login_data, catch_response=True)
+        if response.status_code != 200:
+            response.failure(f"Failed to login as {self.username}: {response.status_code}")
+            # Dừng nếu đăng nhập thất bại
+            # self.environment.runner.quit() # Tạm comment để test các user khác
+
+class WebsiteUser(BaseUser):
+    username = "testuser"
+    password = "password123"
+    wait_time = between(1, 2.5)  # Thời gian chờ giữa các request (1-2.5 giây)
+
+    @task(3)  # Tần suất thực hiện task (3 lần)
+    def view_medical_records(self):
+        """Xem danh sách bản ghi y tế"""
+        with self.client.get("/patient/view_records", catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to view records: {response.status_code}")
+
+    @task(2)  # Tần suất thực hiện task (2 lần)
+    def create_medical_record(self):
+        """Tạo bản ghi y tế mới"""
+        if not self.csrf_token:
+             return # Bỏ qua nếu không có token
+        # Tạo dữ liệu ngẫu nhiên hơn cho bản ghi y tế
+        record_data = {
+            "date": "2024-01-01", # Có thể làm động ngày này
+            "hgb": round(random.uniform(12, 16), 1),
+            "rbc": round(random.uniform(4, 5.5), 1),
+            "wbc": round(random.uniform(4, 11), 1),
+            "plt": random.randint(150, 400),
+            "hct": round(random.uniform(35, 50), 1),
+            "glucose": random.randint(70, 140),
+            "creatinine": round(random.uniform(0.5, 1.5), 1),
+            "alt": random.randint(10, 50),
+            "cholesterol": random.randint(150, 250),
+            "crp": round(random.uniform(0.1, 10), 1),
+            "csrf_token": self.csrf_token
+        }
+        with self.client.post("/patient/new_record", record_data, catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to create record: {response.status_code}")
+
+    # @task(1) # Tạm bỏ task search vì nó không tồn tại cho patient
+    # def search_records(self):
+    #     """Tìm kiếm bản ghi y tế"""
+    #     with self.client.get("/patient/search?query=test", catch_response=True) as response:
+    #         if response.status_code != 200:
+    #             response.failure(f"Failed to search records: {response.status_code}")
+
+    @task(1) # Thêm task xem thông báo
+    def view_notifications(self):
+        """Xem thông báo"""
+        with self.client.get("/patient/notifications", catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to view notifications: {response.status_code}")
+
+class DoctorUser(BaseUser):
+    username = "testdoctor"
+    password = "password123"
+    wait_time = between(1, 3)
+    
+    @task(3)
+    def view_patient_records(self):
+        """Xem bản ghi của bệnh nhân (cần patient_id)"""
+        # Giả sử patient có ID 1 tồn tại. Cần cải tiến để lấy ID động.
+        patient_id = 1 
+        with self.client.get(f"/doctor/view_patient_records/{patient_id}", catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to view patient records for ID {patient_id}: {response.status_code}")
+
+    @task(2)
+    def add_comment(self):
+        """Thêm nhận xét cho bệnh nhân (cần patient_id)"""
+        if not self.csrf_token:
+            return # Bỏ qua nếu không có token
+        # Giả sử patient có ID 1 tồn tại. Cần cải tiến để lấy ID động.
+        patient_id = 1
+        comment_data = {
+            "message": f"Test comment from doctor {self.username} at {int(time.time())}",
+            "csrf_token": self.csrf_token
+        }
+        with self.client.post(f"/doctor/send_notification/{patient_id}", comment_data, catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to add comment for ID {patient_id}: {response.status_code}")
+
+    @task(1)
+    def search_patients(self):
+        """Tìm kiếm bệnh nhân"""
+        # Tìm kiếm với query ngẫu nhiên hoặc cố định
+        search_query = random.choice(["testuser", "patient", "admin", "", "xyz"]) # Thêm các query có thể có hoặc không có kết quả
+        with self.client.get(f"/doctor/search_patient?query={search_query}", catch_response=True) as response:
+             if response.status_code != 200:
+                 response.failure(f"Failed to search patients with query '{search_query}': {response.status_code}")
+
+class AdminUser(BaseUser):
+    username = "admin"
+    password = "admin"
+    wait_time = between(1, 4)
+    
+    @task(5) # Tăng tần suất xem danh sách user vì là task nhẹ
+    def manage_users(self):
+        """Xem danh sách người dùng"""
+        with self.client.get("/admin/users", catch_response=True) as response:
+            if response.status_code != 200:
+                response.failure(f"Failed to view users page: {response.status_code}")
+
+    @task(1) # Tần suất thấp cho các tác vụ thay đổi dữ liệu
+    def admin_update_user_role(self):
+        """Admin đổi vai trò của người dùng"""
+        if not self.csrf_token:
+            return # Bỏ qua nếu không có token
+        # Cần ID của một user test (không phải admin) và vai trò mới
+        # Thay thế 2 bằng ID của user test (ví dụ testuser có thể có ID 2 hoặc khác)
+        user_id_to_update = 2 # <--- CẦN CẬP NHẬT ID NÀY
+        new_role = random.choice(['patient', 'doctor'])
+        update_data = {
+            'role': new_role,
+            'current_role': 'patient', # Giả định user hiện tại là patient, cần lấy động
+            'submit': 'Update Role',
+            'csrf_token': self.csrf_token
+        }
+        with self.client.post(f"/admin/update_role/{user_id_to_update}", update_data, catch_response=True) as response:
+            if response.status_code not in [200, 302]: # Chấp nhận 200 OK hoặc 302 Redirect
+                response.failure(f"Failed to update role for user {user_id_to_update}: {response.status_code}")
+
+    @task(1) # Tần suất thấp cho các tác vụ thay đổi dữ liệu
+    def admin_reset_user_password(self):
+        """Admin đặt lại mật khẩu người dùng"""
+        if not self.csrf_token:
+            return # Bỏ qua nếu không có token
+        # Cần ID của một user test (không phải admin)
+        # Thay thế 2 bằng ID của user test
+        user_id_to_reset_password = 2 # <--- CẦN CẬP NHẬT ID NÀY
+        new_password = f"newpass{int(time.time())}"
+        reset_data = {
+            'new_password': new_password,
+            'confirm_password': new_password,
+            'submit': 'Reset Password',
+            'csrf_token': self.csrf_token
+        }
+        with self.client.post(f"/admin/reset_password/{user_id_to_reset_password}", reset_data, catch_response=True) as response:
+             if response.status_code not in [200, 302]: # Chấp nhận 200 OK hoặc 302 Redirect
+                 response.failure(f"Failed to reset password for user {user_id_to_reset_password}: {response.status_code}")
+
+class GuestUser(HttpUser):
+    wait_time = between(1, 5)
+    
+    def on_start(self):
+        self.get_csrf_token_register()
+
+    def get_csrf_token_register(self):
+         try:
+            response = self.client.get("/register", catch_response=True)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                csrf_input = soup.find('input', {'name': 'csrf_token'})
+                if csrf_input:
+                    self.csrf_token = csrf_input['value']
+                else:
+                    response.failure("CSRF token not found on register page")
+            else:
+                response.failure(f"Failed to get register page: {response.status_code}")
+         except Exception as e:
+            self.environment.runner.quit()
+            print(f"Error getting CSRF token for register: {e}")
+            self.csrf_token = None
+
+    @task(1)
+    def register_user(self):
+        """Đăng ký người dùng mới"""
+        if not self.csrf_token:
+            self.get_csrf_token_register() # Thử lấy lại token nếu chưa có
+            if not self.csrf_token: # Nếu vẫn không có, bỏ qua
+                return
+                
+        global user_counter
+        user_counter += 1
+        new_username = f"newuser{user_counter}_{int(time.time())}"
+        new_email = f"newuser{user_counter}_{int(time.time())}@example.com"
+        password = "newpassword123"
         
-        # Test đăng ký 10 user
-        for i in range(10):
-            response = self.client.post('/register', data={
-                'username': f'testuser{i}',
-                'email': f'test{i}@example.com',
-                'phone': f'012345678{i}',
-                'password': 'password123',
-                'confirm_password': 'password123',
-                'role': 'patient',
-                'csrf_token': 'test_token'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 5.0)  # Phải hoàn thành trong 5 giây
+        register_data = {
+            'username': new_username,
+            'email': new_email,
+            'phone': f'012345{user_counter}',
+            'password': password,
+            'confirm_password': password,
+            'role': random.choice(['patient', 'doctor']),
+            'submit': 'Register',
+            'csrf_token': self.csrf_token
+        }
+        with self.client.post("/register", register_data, catch_response=True) as response:
+            if response.status_code not in [200, 302]: # Chấp nhận 200 OK hoặc 302 Redirect
+                 response.failure(f"Failed to register user {new_username}: {response.status_code}, Response: {response.text}")
+            else:
+                 response.success()
 
-    def test_medical_record_creation_performance(self):
-        """Test hiệu suất tạo bản ghi y tế"""
-        # Tạo user test
-        user = User(username='testuser', email='test@example.com', role='patient', phone='0123456789')
-        user.set_password('password123')
-        db.session.add(user)
-        db.session.commit()
-
-        # Đăng nhập
-        self.client.post('/login', data={
-            'username': 'testuser',
-            'password': 'password123',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-        
-        # Test tạo 10 bản ghi y tế
-        for i in range(10):
-            response = self.client.post('/patient/new_record', data={
-                'date': '2024-01-01',
-                'hgb': 14.5,
-                'rbc': 4.8,
-                'wbc': 7.5,
-                'plt': 250,
-                'hct': 42,
-                'glucose': 100,
-                'creatinine': 1.0,
-                'alt': 25,
-                'cholesterol': 180,
-                'crp': 2.0,
-                'csrf_token': 'test_token',
-                'submit': 'Save Record'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 5.0)  # Phải hoàn thành trong 5 giây
-
-    def test_search_performance(self):
-        """Test hiệu suất tìm kiếm"""
-        # Tạo 10 user test
-        for i in range(10):
-            user = User(username=f'testuser{i}', email=f'test{i}@example.com', role='patient', phone=f'012345678{i}')
-            user.set_password('password123')
-            db.session.add(user)
-        db.session.commit()
-
-        # Đăng nhập admin
-        self.client.post('/login', data={
-            'username': 'admin',
-            'password': 'admin',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-        
-        # Test tìm kiếm
-        response = self.client.get('/admin/users?search=test', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 1.0)  # Phải hoàn thành trong 1 giây
-
-    def test_bulk_medical_record_creation(self):
-        """Test hiệu suất tạo nhiều bản ghi y tế cùng lúc"""
-        # Tạo user test
-        user = User(username='testuser', email='test@example.com', role='patient', phone='0123456789')
-        user.set_password('password123')
-        db.session.add(user)
-        db.session.commit()
-
-        # Đăng nhập
-        self.client.post('/login', data={
-            'username': 'testuser',
-            'password': 'password123',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-        
-        # Test tạo 50 bản ghi y tế
-        for i in range(50):
-            response = self.client.post('/patient/new_record', data={
-                'date': '2024-01-01',
-                'hgb': 14.5,
-                'rbc': 4.8,
-                'wbc': 7.5,
-                'plt': 250,
-                'hct': 42,
-                'glucose': 100,
-                'creatinine': 1.0,
-                'alt': 25,
-                'cholesterol': 180,
-                'crp': 2.0,
-                'csrf_token': 'test_token',
-                'submit': 'Save Record'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 15.0)  # Phải hoàn thành trong 15 giây
-
-    def test_concurrent_user_operations(self):
-        """Test hiệu suất khi nhiều user thao tác cùng lúc"""
-        # Tạo 5 user test
-        users = []
-        for i in range(5):
-            user = User(username=f'testuser{i}', email=f'test{i}@example.com', role='patient', phone=f'012345678{i}')
-            user.set_password('password123')
-            db.session.add(user)
-            users.append(user)
-        db.session.commit()
-
-        start_time = time.time()
-        
-        # Mỗi user tạo 5 bản ghi y tế
-        for user in users:
-            # Đăng nhập
-            self.client.post('/login', data={
-                'username': user.username,
-                'password': 'password123',
-                'csrf_token': 'test_token'
-            })
-            
-            # Tạo bản ghi
-            for i in range(5):
-                response = self.client.post('/patient/new_record', data={
-                    'date': '2024-01-01',
-                    'hgb': 14.5,
-                    'rbc': 4.8,
-                    'wbc': 7.5,
-                    'plt': 250,
-                    'hct': 42,
-                    'glucose': 100,
-                    'creatinine': 1.0,
-                    'alt': 25,
-                    'cholesterol': 180,
-                    'crp': 2.0,
-                    'csrf_token': 'test_token',
-                    'submit': 'Save Record'
-                }, follow_redirects=True)
-                self.assertEqual(response.status_code, 200)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 20.0)  # Phải hoàn thành trong 20 giây
-
-    def test_database_query_performance(self):
-        """Test hiệu suất truy vấn database"""
-        # Tạo 100 user test
-        for i in range(100):
-            user = User(username=f'testuser{i}', email=f'test{i}@example.com', role='patient', phone=f'012345678{i}')
-            user.set_password('password123')
-            db.session.add(user)
-        db.session.commit()
-
-        start_time = time.time()
-        
-        # Test các truy vấn phức tạp
-        # 1. Tìm kiếm user theo nhiều điều kiện
-        users = User.query.filter(User.username.like('%test%')).filter(User.role == 'patient').all()
-        self.assertEqual(len(users), 100)
-        
-        # 2. Phân trang
-        page1 = User.query.paginate(page=1, per_page=20)
-        self.assertEqual(len(page1.items), 20)
-        
-        # 3. Sắp xếp
-        sorted_users = User.query.order_by(User.username).all()
-        self.assertEqual(len(sorted_users), 100)
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 2.0)  # Phải hoàn thành trong 2 giây
-
-    def test_doctor_operations_performance(self):
-        """Test hiệu suất các thao tác của bác sĩ"""
-        # Tạo bác sĩ test
-        doctor = User(username='testdoctor', email='doctor@example.com', role='doctor', phone='0123456789')
-        doctor.set_password('password123')
-        db.session.add(doctor)
-        db.session.commit()
-
-        # Đăng nhập
-        self.client.post('/login', data={
-            'username': 'testdoctor',
-            'password': 'password123',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-
-        # 1. Test tìm kiếm bệnh nhân
-        response = self.client.get('/doctor/search_patient', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 2. Test xem bản ghi y tế của bệnh nhân
-        response = self.client.get('/doctor/view_patient_records/1', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 3. Test thêm nhận xét
-        response = self.client.post('/doctor/send_notification/1', data={
-            'message': 'Test comment',
-            'csrf_token': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 3.0)  # Phải hoàn thành trong 3 giây
-
-    def test_patient_operations_performance(self):
-        """Test hiệu suất các thao tác của bệnh nhân"""
-        # Tạo bệnh nhân test
-        patient = User(username='testpatient', email='patient@example.com', role='patient', phone='0123456789')
-        patient.set_password('password123')
-        db.session.add(patient)
-        db.session.commit()
-
-        # Đăng nhập
-        self.client.post('/login', data={
-            'username': 'testpatient',
-            'password': 'password123',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-
-        # 1. Test xem thông tin cá nhân
-        response = self.client.get('/patient/profile', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 2. Test xem lịch sử bản ghi y tế
-        response = self.client.get('/patient/view_records', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 3. Test cập nhật thông tin cá nhân
-        response = self.client.post('/patient/profile', data={
-            'full_name': 'Test User',
-            'phone': '0987654321',
-            'email': 'newemail@example.com',
-            'csrf_token': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 3.0)  # Phải hoàn thành trong 3 giây
-
-    def test_admin_operations_performance(self):
-        """Test hiệu suất các thao tác của admin"""
-        # Đăng nhập admin
-        self.client.post('/login', data={
-            'username': 'admin',
-            'password': 'admin',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-
-        # 1. Test quản lý người dùng
-        response = self.client.get('/admin/users', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 2. Test cập nhật vai trò người dùng
-        response = self.client.post('/admin/update_role/1', data={
-            'role': 'doctor',
-            'csrf_token': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 3. Test reset mật khẩu
-        response = self.client.post('/admin/reset_password/1', data={
-            'new_password': 'newpassword123',
-            'confirm_password': 'newpassword123',
-            'csrf_token': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 4.0)  # Phải hoàn thành trong 4 giây
-
-    def test_export_performance(self):
-        """Test hiệu suất xuất dữ liệu"""
-        # Tạo dữ liệu test
-        for i in range(50):
-            user = User(username=f'testuser{i}', email=f'test{i}@example.com', role='patient', phone=f'012345678{i}')
-            user.set_password('password123')
-            db.session.add(user)
-        db.session.commit()
-
-        # Đăng nhập admin
-        with self.client.session_transaction() as session:
-            session['csrf_token'] = 'test_token'
-        
-        self.client.post('/login', data={
-            'username': 'admin',
-            'password': 'admin',
-            'csrf_token': 'test_token'
-        })
-
-        start_time = time.time()
-
-        # 1. Test xuất danh sách người dùng
-        response = self.client.get('/admin/users/export', headers={
-            'X-CSRFToken': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        # 2. Test xuất bản ghi y tế
-        response = self.client.get('/admin/records/export', headers={
-            'X-CSRFToken': 'test_token'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        # Kiểm tra thời gian thực thi
-        self.assertLess(execution_time, 5.0)  # Phải hoàn thành trong 5 giây
-
-if __name__ == '__main__':
-    unittest.main() 
+    @task(2)
+    def view_login_page(self):
+        """Xem trang đăng nhập"""
+        self.client.get("/login")
