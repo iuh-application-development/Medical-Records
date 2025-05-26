@@ -19,7 +19,7 @@ Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về 
 # Hướng dẫn cài đặt hoặc sử dụng
 ## Yêu cầu : Phải cài đặt miniconda trước khi chạy các bước tiếp theo bên dưới.
 ```bash 
-winget install -e --id Anaconda.Miniconda3
+https://www.anaconda.com/download/
 ```
 1.  Clone repo:
     ```bash
@@ -50,13 +50,15 @@ winget install -e --id Anaconda.Miniconda3
     ```bash
     python run.py
     ```
-## Chạy tự động
+## Chạy tự động (Tự động install Miniconda và setup môi trường)
 ```bash
     .\setup-and-run.ps1
 ```
 # Link video
 
-[Link Video Demo] 
+🎥 **Video Demo**: [Medical Records Management System](https://youtu.be/gzs8irxcZiI)
+
+Video này sẽ hướng dẫn chi tiết cách sử dụng hệ thống quản lý hồ sơ y tế, bao gồm các tính năng chính cho bệnh nhân, bác sĩ và quản trị viên.
 
 # Screenshots
 - **Giao diện trò chuyện với AI**

@@ -60,8 +60,67 @@ catch {
                 throw "Winget installation failed with exit code $LASTEXITCODE"
             }
             Write-Success "Miniconda installed successfully!"
-            Write-Host "Please restart this script after installation completes for the PATH changes to take effect." -ForegroundColor Yellow
-            exit 0
+            
+            # Add Miniconda to PATH environment variable
+            Write-Step "Adding Miniconda to system PATH..."
+            
+            # Get the default Miniconda installation path
+            $minicondaPath = "$env:USERPROFILE\miniconda3"
+            $scriptsPath = "$minicondaPath\Scripts"
+            $libraryBinPath = "$minicondaPath\Library\bin"
+            
+            # Check if Miniconda was installed to a different location
+            if (-not (Test-Path $minicondaPath)) {
+                $minicondaPath = "$env:USERPROFILE\AppData\Local\miniconda3"
+                $scriptsPath = "$minicondaPath\Scripts"
+                $libraryBinPath = "$minicondaPath\Library\bin"
+            }
+            
+            if (Test-Path $minicondaPath) {
+                # Get current PATH
+                $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+                
+                # Paths to add
+                $pathsToAdd = @($minicondaPath, $scriptsPath, $libraryBinPath)
+                $pathUpdated = $false
+                
+                foreach ($pathToAdd in $pathsToAdd) {
+                    if ($currentPath -notlike "*$pathToAdd*") {
+                        if ($currentPath) {
+                            $currentPath = "$pathToAdd;$currentPath"
+                        }
+                        else {
+                            $currentPath = $pathToAdd
+                        }
+                        $pathUpdated = $true
+                    }
+                }
+                
+                if ($pathUpdated) {
+                    # Update PATH for current user
+                    [Environment]::SetEnvironmentVariable("PATH", $currentPath, "User")
+                    Write-Success "Miniconda paths added to user PATH environment variable"
+                    
+                    # Update PATH for current session
+                    $env:PATH = "$minicondaPath;$scriptsPath;$libraryBinPath;$env:PATH"
+                    Write-Success "PATH updated for current session"
+                    
+                    # Initialize conda for PowerShell
+                    Write-Step "Initializing conda for PowerShell..."
+                    & "$minicondaPath\Scripts\conda.exe" init powershell
+                    
+                    Write-Success "Miniconda setup completed successfully!"
+                    Write-Host "You can now continue with the environment setup..." -ForegroundColor Green
+                }
+                else {
+                    Write-Success "Miniconda paths already exist in PATH"
+                }
+            }
+            else {
+                Write-Error "Could not find Miniconda installation directory"
+                Write-Host "Please manually add Miniconda to your PATH or restart PowerShell as Administrator" -ForegroundColor Yellow
+                exit 1
+            }
         }
         catch {
             Write-Error "Failed to install Miniconda. Error: $_"
