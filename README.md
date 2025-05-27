@@ -13,7 +13,7 @@ Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về 
 | --------------- | -------- | --------------------- |
 | Trương Công Đạt | 22685561 | tdat4926@gmail.com    |
 | Nguyễn Gia Lâm  | 22685611 | lam2004ha@gmail.com   |
-| han Tấn Tài     | 22684181 | tide.tantai@gmail.com |
+| Phan Tấn Tài     | 22684181 | tide.tantai@gmail.com |
 
 
 # Hướng dẫn cài đặt hoặc sử dụng
