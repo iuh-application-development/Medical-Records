@@ -1,8 +1,3 @@
-# Medical Records Management System Setup Script
-# Filename: setup-and-run.ps1
-# Date: May 25, 2025
-# This script automates the setup and running of the Medical Records Management System with Conda
-
 # Script Configuration
 $appName = "Medical Records Management System"
 $projectPath = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -65,8 +60,67 @@ catch {
                 throw "Winget installation failed with exit code $LASTEXITCODE"
             }
             Write-Success "Miniconda installed successfully!"
-            Write-Host "Please restart this script after installation completes for the PATH changes to take effect." -ForegroundColor Yellow
-            exit 0
+            
+            # Add Miniconda to PATH environment variable
+            Write-Step "Adding Miniconda to system PATH..."
+            
+            # Get the default Miniconda installation path
+            $minicondaPath = "$env:USERPROFILE\miniconda3"
+            $scriptsPath = "$minicondaPath\Scripts"
+            $libraryBinPath = "$minicondaPath\Library\bin"
+            
+            # Check if Miniconda was installed to a different location
+            if (-not (Test-Path $minicondaPath)) {
+                $minicondaPath = "$env:USERPROFILE\AppData\Local\miniconda3"
+                $scriptsPath = "$minicondaPath\Scripts"
+                $libraryBinPath = "$minicondaPath\Library\bin"
+            }
+            
+            if (Test-Path $minicondaPath) {
+                # Get current PATH
+                $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+                
+                # Paths to add
+                $pathsToAdd = @($minicondaPath, $scriptsPath, $libraryBinPath)
+                $pathUpdated = $false
+                
+                foreach ($pathToAdd in $pathsToAdd) {
+                    if ($currentPath -notlike "*$pathToAdd*") {
+                        if ($currentPath) {
+                            $currentPath = "$pathToAdd;$currentPath"
+                        }
+                        else {
+                            $currentPath = $pathToAdd
+                        }
+                        $pathUpdated = $true
+                    }
+                }
+                
+                if ($pathUpdated) {
+                    # Update PATH for current user
+                    [Environment]::SetEnvironmentVariable("PATH", $currentPath, "User")
+                    Write-Success "Miniconda paths added to user PATH environment variable"
+                    
+                    # Update PATH for current session
+                    $env:PATH = "$minicondaPath;$scriptsPath;$libraryBinPath;$env:PATH"
+                    Write-Success "PATH updated for current session"
+                    
+                    # Initialize conda for PowerShell
+                    Write-Step "Initializing conda for PowerShell..."
+                    & "$minicondaPath\Scripts\conda.exe" init powershell
+                    
+                    Write-Success "Miniconda setup completed successfully!"
+                    Write-Host "You can now continue with the environment setup..." -ForegroundColor Green
+                }
+                else {
+                    Write-Success "Miniconda paths already exist in PATH"
+                }
+            }
+            else {
+                Write-Error "Could not find Miniconda installation directory"
+                Write-Host "Please manually add Miniconda to your PATH or restart PowerShell as Administrator" -ForegroundColor Yellow
+                exit 1
+            }
         }
         catch {
             Write-Error "Failed to install Miniconda. Error: $_"
@@ -138,89 +192,7 @@ else {
     exit 1
 }
 
-# Initialize database if it doesn't exist
-Write-Step "Checking database..."
-$initDatabase = $true
-if (Test-Path $dbPath) {
-    $response = Read-Host "Database already exists. Do you want to recreate it? (y/n)"
-    if ($response -eq "y" -or $response -eq "Y") {
-        Remove-Item $dbPath -Force
-        Write-Success "Existing database removed"
-    }
-    else {
-        $initDatabase = $false
-        Write-Success "Using existing database"
-    }
-}
-
-if ($initDatabase) {
-    Write-Step "Initializing database..."
-    try {
-        # Create a temporary Python script to initialize the database
-        $initScript = @"
-from app import create_app, db
-from app.models.user import User
-from app.config import DevelopmentConfig
-import os
-
-# Create app with development configuration
-app = create_app(DevelopmentConfig)
-
-# Ensure instance folder exists
-os.makedirs('instance', exist_ok=True)
-
-# Initialize database
-with app.app_context():
-    db.create_all()
-    
-    # Check if admin user exists
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin', email='admin@example.com', role='admin', phone='0123456789')
-        admin.set_password('admin')
-        db.session.add(admin)
-        db.session.commit()
-        print("Created default admin user: username='admin', password='admin'")
-    else:
-        print("Admin user already exists")
-
-    print("Database initialized successfully")
-"@
-
-        $initScriptPath = Join-Path $projectPath "init_db.py"
-        $initScript | Out-File -FilePath $initScriptPath -Encoding utf8
-        # Create a batch script to activate environment and run the initialization
-        $batchScript = @"
-@echo off
-CALL conda.bat activate $condaEnvName
-if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-python "$initScriptPath"
-if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-"@
-        
-        $batchPath = Join-Path $projectPath "init_db.bat"
-        $batchScript | Out-File -FilePath $batchPath -Encoding ascii
-        
-        # Run the batch script
-        cmd /c $batchPath
-        
-        if ($LASTEXITCODE -ne 0) {
-            Remove-Item $initScriptPath -Force
-            Remove-Item $batchPath -Force
-            throw "Database initialization failed with error code: $LASTEXITCODE"
-        }
-        
-        # Remove the temporary scripts
-        Remove-Item $initScriptPath -Force
-        Remove-Item $batchPath -Force
-        
-        Write-Success "Database initialized successfully"
-    }
-    catch {
-        Write-Error "Failed to initialize database. Error: $_"
-        exit 1
-    }
-}
+# Database will be initialized automatically when the application starts
 
 # Step 3: Run the application
 Write-Header "Starting $appName"

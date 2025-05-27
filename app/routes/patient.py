@@ -228,3 +228,74 @@ def view_doctors():
     # Lấy danh sách tất cả bác sĩ
     doctors = User.query.filter_by(role='doctor').all()
     return render_template('view_doctors.html', doctors=doctors)
+
+@bp.route('/delete_record/<int:record_id>', methods=['POST'])
+@login_required
+def delete_record(record_id):
+    if current_user.role != 'patient':
+        flash('Only patients can delete their medical records.', 'danger')
+        return redirect(url_for('index'))
+    
+    record = MedicalRecord.query.get_or_404(record_id)
+    
+    # Ensure the record belongs to the current user
+    if record.patient_id != current_user.id:
+        flash('You can only delete your own medical records.', 'danger')
+        return redirect(url_for('patient.view_records'))
+    
+    try:
+        db.session.delete(record)
+        db.session.commit()
+        flash('Medical record has been deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while deleting the record.', 'danger')
+    
+    return redirect(url_for('patient.view_records'))
+
+@bp.route('/edit_record/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+def edit_record(record_id):
+    if current_user.role != 'patient':
+        flash('Only patients can edit their medical records.', 'danger')
+        return redirect(url_for('index'))
+    
+    record = MedicalRecord.query.get_or_404(record_id)
+    
+    # Ensure the record belongs to the current user
+    if record.patient_id != current_user.id:
+        flash('You can only edit your own medical records.', 'danger')
+        return redirect(url_for('patient.view_records'))
+    
+    form = MedicalRecordForm()
+    if form.validate_on_submit():
+        record.date = form.date.data
+        record.hgb = form.hgb.data
+        record.rbc = form.rbc.data
+        record.wbc = form.wbc.data
+        record.plt = form.plt.data
+        record.hct = form.hct.data
+        record.glucose = form.glucose.data
+        record.creatinine = form.creatinine.data
+        record.alt = form.alt.data
+        record.cholesterol = form.cholesterol.data
+        record.crp = form.crp.data
+        
+        db.session.commit()
+        flash('Medical record has been updated!', 'success')
+        return redirect(url_for('patient.view_records'))
+    
+    elif request.method == 'GET':
+        form.date.data = record.date
+        form.hgb.data = record.hgb
+        form.rbc.data = record.rbc
+        form.wbc.data = record.wbc
+        form.plt.data = record.plt
+        form.hct.data = record.hct
+        form.glucose.data = record.glucose
+        form.creatinine.data = record.creatinine
+        form.alt.data = record.alt
+        form.cholesterol.data = record.cholesterol
+        form.crp.data = record.crp
+    
+    return render_template('edit_record.html', form=form, record=record)

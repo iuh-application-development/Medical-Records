@@ -9,13 +9,18 @@ Medical Records là một nền tảng web toàn diện giúp bệnh nhân, bác
 Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về các vấn đề liên quan đến lĩnh vực y tế.
 
 # Thông tin nhóm
+| Họ và tên       | MSSV     | Email                 |
+| --------------- | -------- | --------------------- |
+| Trương Công Đạt | 22685561 | tdat4926@gmail.com    |
+| Nguyễn Gia Lâm  | 22685611 | lam2004ha@gmail.com   |
+| Phan Tấn Tài     | 22684181 | tide.tantai@gmail.com |
 
-- **Thành viên 1:** Trương Công Đạt - 22685561
-- **Thành viên 2:** Nguyễn Gia Lâm - 22685611
-- **Thành viên 3:** Phan Tấn Tài - 22684181
 
 # Hướng dẫn cài đặt hoặc sử dụng
-
+## Yêu cầu : Phải cài đặt miniconda trước khi chạy các bước tiếp theo bên dưới.
+```bash 
+https://www.anaconda.com/download/
+```
 1.  Clone repo:
     ```bash
     git clone https://github.com/iuh-application-development/Medical-Records.git
@@ -23,6 +28,7 @@ Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về 
     ```bash
     cd .\Medical-Records\
     ```
+## Chạy cơ bản  
 2.  Tạo môi trường ảo:
     ```bash
     python -m venv venv
@@ -44,10 +50,15 @@ Ngoài ra, người dùng còn có thể giao tiếp với AI của Gemini về 
     ```bash
     python run.py
     ```
-
+## Chạy tự động (Tự động install Miniconda và setup môi trường)
+```bash
+    .\setup-and-run.ps1
+```
 # Link video
 
-[Link Video Demo] 
+🎥 **Video Demo**: [Medical Records Management System](https://youtu.be/gzs8irxcZiI)
+
+Video này sẽ hướng dẫn chi tiết cách sử dụng hệ thống quản lý hồ sơ y tế, bao gồm các tính năng chính cho bệnh nhân, bác sĩ và quản trị viên.
 
 # Screenshots
 - **Giao diện trò chuyện với AI**
